@@ -1,6 +1,7 @@
 {
   "name": "nanova-backend",
   "version": "1.0.0",
+  "license": "ISC",
   "type": "module",
   "description": "Production Backend & Automation API for Nanova Tees & Surprise Nanova",
   "main": "src/index.js",

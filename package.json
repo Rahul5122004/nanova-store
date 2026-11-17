@@ -1,9 +1,13 @@
 {
   "name": "nanova-platform",
   "version": "1.0.0",
+  "license": "ISC",
   "description": "NANOVA - Premium Dual-Brand E-Commerce & Business Automation Platform",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "build": "npm run build --prefix client",
+    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
     "start": "node server/src/index.js",
     "server": "npm run start --prefix server",
     "server:dev": "npm run dev --prefix server",
