@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" width="600" height="700">
+    <rect width="600" height="700" fill="#14141A" rx="16" />
+    <defs>
+      <linearGradient id="goldBox" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FDE68A" />
+        <stop offset="50%" stop-color="#D97706" />
+        <stop offset="100%" stop-color="#78350F" />
+      </linearGradient>
+    </defs>
+    <!-- 3D Isometric Luxury Box Graphic -->
+    <g transform="translate(300, 270)">
+      <!-- Box Base -->
+      <polygon points="0,-80 150,0 0,80 -150,0" fill="#202028" stroke="#3B3B48" stroke-width="2" />
+      <polygon points="-150,0 0,80 0,220 -150,140" fill="#181820" stroke="#2B2B38" stroke-width="2" />
+      <polygon points="0,80 150,0 150,140 0,220" fill="#14141B" stroke="#2B2B38" stroke-width="2" />
+      <!-- Satin Ribbon -->
+      <polygon points="-15,-72 15,-56 15,220 -15,220" fill="url(#goldBox)" opacity="0.9" />
+      <polygon points="-150,4 -150,-8 150,-8 150,4" fill="url(#goldBox)" opacity="0.8" />
+      <!-- Big Golden Bow -->
+      <circle cx="-25" cy="-90" r="30" fill="none" stroke="url(#goldBox)" stroke-width="14" />
+      <circle cx="25" cy="-90" r="30" fill="none" stroke="url(#goldBox)" stroke-width="14" />
+      <circle cx="0" cy="-85" r="14" fill="#FDE68A" />
+    </g>
+    <!-- Label Below -->
+    <g transform="translate(300, 560)" text-anchor="middle">
+      <text y="0" font-family="'Outfit', sans-serif" font-weight="800" font-size="22" fill="#FDE68A" letter-spacing="3">ETERNAL LOVE BOX</text>
+      <text y="24" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" font-size="12" fill="#D4D4D8" letter-spacing="2">VELVET KEEPSAKE</text>
+      <text y="45" font-family="sans-serif" font-size="10" fill="#9CA3AF" letter-spacing="1">SURPRISE NANOVA • CURATED WITH LOVE</text>
+    </g>
+  </svg>

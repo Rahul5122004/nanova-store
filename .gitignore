@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment variables (keep secrets private)
+.env
+server/.env
+client/.env
+
+# Build outputs (can be rebuilt with npm run build)
+client/dist/
+
+# Logs & OS files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

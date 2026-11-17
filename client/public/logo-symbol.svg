@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="nGrad" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="50%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+    <linearGradient id="nGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="50%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#92400E" />
+    </linearGradient>
+  </defs>
+  <!-- Geometric N Symbol with Facets -->
+  <polygon points="18,15 38,15 38,85 18,85" fill="url(#nGrad)" opacity="0.95" />
+  <polygon points="38,15 82,85 62,85 18,15" fill="#FFFFFF" />
+  <polygon points="62,15 82,15 82,85 62,85" fill="url(#nGrad)" opacity="0.9" />
+  <polygon points="38,15 54,42 38,50" fill="#CBD5E1" opacity="0.6" />
+  <polygon points="62,85 46,58 62,50" fill="#64748B" opacity="0.5" />
+</svg>

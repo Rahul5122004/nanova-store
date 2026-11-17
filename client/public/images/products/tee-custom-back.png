@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" width="600" height="700">
+    <rect width="600" height="700" fill="#121216" rx="16" />
+    <path d="M 200,60 C 250,75 350,75 400,60 L 540,160 L 460,260 L 420,220 L 420,640 L 180,640 L 180,220 L 140,260 L 60,160 Z" fill="#181820" stroke="#333340" stroke-width="4" />
+    <!-- Big Streetwear Back Graphic -->
+    <g transform="translate(300, 310)" text-anchor="middle">
+      <rect x="-140" y="-140" width="280" height="280" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6,4" opacity="0.4" />
+      <polygon points="-40,-50 -12,-50 -12,50 -40,50" fill="#FFFFFF" opacity="0.9" />
+      <polygon points="-12,-50 40,50 16,50 -40,-50" fill="#FFFFFF" />
+      <polygon points="16,-50 40,-50 40,50 16,50" fill="#FFFFFF" opacity="0.9" />
+      
+      <text y="90" font-family="'Syne', 'Outfit', sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" letter-spacing="5">YOUR VIBE</text>
+      <text y="115" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="12" fill="#FFFFFF" letter-spacing="3">CUSTOM DESIGN</text>
+      <text y="135" font-family="sans-serif" font-size="9" fill="#71717A" letter-spacing="1">AUTHENTIC STREET DROP // 11:11</text>
+    </g>
+  </svg>

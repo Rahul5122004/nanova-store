@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-zinc-900 font-sans transition-colors duration-200;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: #fafafc;
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(24, 24, 27, 0.055) 1.2px, transparent 0),
+      linear-gradient(to right, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.018) 1px, transparent 1px);
+    background-size: 24px 24px, 120px 120px, 120px 120px;
+    background-attachment: fixed;
+  }
+}
+
+/* Modern Designer Light Canvas Pattern with Blueprint Micro-Grid */
+.bg-canvas-pattern {
+  background-color: #fafafc;
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(24, 24, 27, 0.055) 1.2px, transparent 0),
+    linear-gradient(to right, rgba(0, 0, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.018) 1px, transparent 1px);
+  background-size: 24px 24px, 120px 120px, 120px 120px;
+  background-attachment: fixed;
+}
+
+.dark body,
+.dark .bg-canvas-pattern {
+  background-color: #08080c;
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.06) 1.2px, transparent 0),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px, 120px 120px, 120px 120px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f4;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0d0d12;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #272733;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #414154;
+}
+
+/* Interior Components Styling (Rich Dark / Glassmorphism Components on White Page) */
+.glass-panel {
+  background: #101015 !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
+  color: #f4f4f5 !important;
+}
+
+.glass-card {
+  background: #14141b !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.2);
+  color: #f4f4f5 !important;
+}
+
+.glass-input {
+  background: #181822 !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease;
+}
+.glass-input:focus {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Interior Table Consistency within Glass Panels */
+.glass-panel table thead {
+  background-color: #161622 !important;
+  color: #e4e4e7 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.glass-panel table thead th {
+  background-color: #161622 !important;
+  color: #e4e4e7 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.glass-panel table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+.glass-panel table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+.glass-panel table td {
+  color: #e4e4e7 !important;
+}
+
+/* Universally protect text visibility inside glass-panel, glass-card and dark components */
+.glass-panel .text-zinc-900,
+.glass-panel .text-zinc-800,
+.glass-panel .text-zinc-700,
+.glass-card .text-zinc-900,
+.glass-card .text-zinc-800,
+.glass-card .text-zinc-700,
+[class*="bg-[#0c0c"] .text-zinc-900,
+[class*="bg-[#0c0c"] .text-zinc-800,
+[class*="bg-[#0c0c"] .text-zinc-700,
+[class*="bg-[#1111"] .text-zinc-900,
+[class*="bg-[#1111"] .text-zinc-800,
+[class*="bg-[#1111"] .text-zinc-700,
+[class*="bg-[#1414"] .text-zinc-900,
+[class*="bg-[#1414"] .text-zinc-800,
+[class*="bg-[#1414"] .text-zinc-700 {
+  color: #ffffff !important;
+}
+
+.glass-panel .text-zinc-500,
+.glass-panel .text-zinc-600,
+.glass-card .text-zinc-500,
+.glass-card .text-zinc-600,
+[class*="bg-[#0c0c"] .text-zinc-500,
+[class*="bg-[#0c0c"] .text-zinc-600,
+[class*="bg-[#1111"] .text-zinc-500,
+[class*="bg-[#1111"] .text-zinc-600,
+[class*="bg-[#1414"] .text-zinc-500,
+[class*="bg-[#1414"] .text-zinc-600 {
+  color: #a1a1aa !important;
+}
+
+/* Modal Windows as Dark Interior Components with Crisp Contrast */
+.fixed.inset-0 .bg-white,
+.fixed.inset-0 [class*="bg-zinc-50"] {
+  background-color: #121218 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f4f4f5 !important;
+}
+.fixed.inset-0 h1,
+.fixed.inset-0 h2,
+.fixed.inset-0 h3,
+.fixed.inset-0 h4,
+.fixed.inset-0 h5,
+.fixed.inset-0 .text-zinc-900,
+.fixed.inset-0 .text-zinc-800,
+.fixed.inset-0 .text-zinc-700 {
+  color: #ffffff !important;
+}
+.fixed.inset-0 p,
+.fixed.inset-0 label,
+.fixed.inset-0 .text-zinc-600,
+.fixed.inset-0 .text-zinc-500 {
+  color: #d4d4d8 !important;
+}
+.fixed.inset-0 .border-zinc-200,
+.fixed.inset-0 .border-zinc-300 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.fixed.inset-0 input,
+.fixed.inset-0 select,
+.fixed.inset-0 textarea {
+  background-color: #181822 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Gold Glow for Surprise Nanova */
+.gold-glow {
+  box-shadow: 0 0 35px -5px rgba(201, 154, 62, 0.35);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #f5d38e 0%, #c99a3e 50%, #9e7225 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.street-gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

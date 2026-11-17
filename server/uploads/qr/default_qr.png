@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="500" height="600">
+    <rect width="500" height="600" fill="#FFFFFF" rx="16" />
+    <!-- Header -->
+    <rect x="0" y="0" width="500" height="90" fill="#111116" rx="16" />
+    <text x="250" y="45" font-family="'Outfit', sans-serif" font-weight="800" font-size="22" fill="#FFFFFF" text-anchor="middle">NANOVA OFFICIAL PAYMENT QR</text>
+    <text x="250" y="70" font-family="sans-serif" font-weight="600" font-size="12" fill="#C99A3E" text-anchor="middle">SCAN &amp; PAY WITH ANY UPI APP</text>
+    
+    <!-- Stylized QR Grid -->
+    <g transform="translate(75, 120)">
+      <rect width="350" height="350" fill="#F8FAFC" rx="12" stroke="#CBD5E1" stroke-width="3" />
+      
+      <!-- Top Left Position Square -->
+      <rect x="25" y="25" width="70" height="70" fill="#000000" rx="8" />
+      <rect x="40" y="40" width="40" height="40" fill="#FFFFFF" rx="4" />
+      <rect x="50" y="50" width="20" height="20" fill="#000000" rx="2" />
+      
+      <!-- Top Right Position Square -->
+      <rect x="255" y="25" width="70" height="70" fill="#000000" rx="8" />
+      <rect x="270" y="40" width="40" height="40" fill="#FFFFFF" rx="4" />
+      <rect x="280" y="50" width="20" height="20" fill="#000000" rx="2" />
+      
+      <!-- Bottom Left Position Square -->
+      <rect x="25" y="255" width="70" height="70" fill="#000000" rx="8" />
+      <rect x="40" y="270" width="40" height="40" fill="#FFFFFF" rx="4" />
+      <rect x="50" y="280" width="20" height="20" fill="#000000" rx="2" />
+
+      <!-- QR Pattern Blocks -->
+      <rect x="120" y="40" width="20" height="40" fill="#000000" />
+      <rect x="160" y="30" width="40" height="20" fill="#000000" />
+      <rect x="130" y="80" width="50" height="20" fill="#000000" />
+      <rect x="40" y="120" width="40" height="30" fill="#000000" />
+      <rect x="100" y="120" width="60" height="20" fill="#000000" />
+      <rect x="180" y="110" width="30" height="50" fill="#000000" />
+      <rect x="230" y="120" width="40" height="20" fill="#000000" />
+      <rect x="290" y="120" width="20" height="50" fill="#000000" />
+
+      <rect x="40" y="170" width="30" height="40" fill="#000000" />
+      <rect x="90" y="160" width="40" height="40" fill="#000000" />
+      <rect x="150" y="180" width="40" height="30" fill="#000000" />
+      <rect x="220" y="160" width="50" height="20" fill="#000000" />
+
+      <!-- Center Logo Box in QR -->
+      <rect x="140" y="140" width="70" height="70" fill="#FFFFFF" rx="8" stroke="#000000" stroke-width="2" />
+      <text x="175" y="182" font-family="'Syne', sans-serif" font-weight="900" font-size="28" fill="#000000" text-anchor="middle">N</text>
+
+      <rect x="40" y="220" width="50" height="20" fill="#000000" />
+      <rect x="120" y="230" width="40" height="40" fill="#000000" />
+      <rect x="180" y="230" width="30" height="50" fill="#000000" />
+      <rect x="230" y="210" width="80" height="30" fill="#000000" />
+
+      <rect x="120" y="290" width="70" height="20" fill="#000000" />
+      <rect x="210" y="260" width="30" height="50" fill="#000000" />
+      <rect x="260" y="260" width="50" height="40" fill="#000000" />
+    </g>
+
+    <!-- Footer Instructions -->
+    <g transform="translate(250, 505)" text-anchor="middle">
+      <text y="0" font-family="sans-serif" font-weight="bold" font-size="14" fill="#0F172A">BHIM UPI • Google Pay • PhonePe • Paytm</text>
+      <text y="22" font-family="sans-serif" font-size="11" fill="#64748B">Account Name: NANOVA ENTERPRISES</text>
+      <text y="40" font-family="sans-serif" font-size="10" fill="#94A3B8">Enter your 12-digit UTR/Reference ID after payment</text>
+    </g>
+  </svg>
