@@ -144,7 +144,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen py-10 bg-transparent text-zinc-900 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-4 sm:pb-5">
           <Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-700 hover:text-black transition">
             <ArrowLeft className="w-4 h-4" />
             <span>Continue Shopping</span>
@@ -280,7 +280,7 @@ export default function Checkout() {
               </div>
 
               {/* Payment Type Switcher */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('UPI_QR')}
@@ -355,7 +355,7 @@ export default function Checkout() {
                   {/* UPI Reference ID & Screenshot Upload */}
                   <div className="space-y-3 pt-3 border-t border-zinc-800/80">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-300 flex flex-wrap items-center justify-between gap-1">
                         <span>12-Digit UPI Reference / UTR Number</span>
                         <span className="text-[10px] text-zinc-400 font-normal">Found in UPI app transaction details</span>
                       </label>

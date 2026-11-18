@@ -78,7 +78,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
   return (
     <div className="min-h-screen bg-canvas-pattern text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row transition-colors relative">
       {/* SIDEBAR (Desktop - Interior Dark Component) */}
-      <aside className="hidden md:flex flex-col w-72 bg-[#0c0c10] border-r border-zinc-800 text-white flex-shrink-0 z-30 transition-colors shadow-2xl">
+      <aside className="hidden md:flex flex-col w-60 lg:w-64 xl:w-72 bg-[#0c0c10] border-r border-zinc-800 text-white flex-shrink-0 z-30 transition-colors shadow-2xl">
         {/* Sidebar Brand Header */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
           <Logo variant="unified" size="small" showTagline={false} />
@@ -222,7 +222,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
               </button>
 
               {notifDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#121218] border border-zinc-800 rounded-2xl shadow-2xl p-4 z-50 animate-scaleUp text-white">
+                <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 sm:w-96 bg-[#121218] border border-zinc-800 rounded-2xl shadow-2xl p-4 z-50 animate-scaleUp text-white">
                   <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                     <span className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Bell className="w-3.5 h-3.5 text-amber-400" /> Notifications Stream
@@ -274,14 +274,48 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
 
         {/* MOBILE SIDEBAR MODAL */}
         {mobileSidebarOpen && (
-          <div className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-sm flex">
-            <div className="w-72 bg-[#0c0c10] h-full p-4 flex flex-col justify-between border-r border-zinc-800 shadow-2xl text-white">
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+          <div
+            className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-sm flex"
+            onClick={() => setMobileSidebarOpen(false)}
+          >
+            <div
+              className="w-72 max-w-[85vw] bg-[#0c0c10] h-full p-4 flex flex-col justify-between border-r border-zinc-800 shadow-2xl text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
                 <Logo variant="unified" size="small" showTagline={false} />
                 <button onClick={() => setMobileSidebarOpen(false)} className="p-1 text-zinc-400 hover:text-white">
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {onSelectBrand && (
+                <div className="py-3 border-b border-zinc-800">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1.5 px-1">
+                    Active Store Filter
+                  </span>
+                  <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-[11px] font-bold text-center">
+                    <button
+                      onClick={() => { onSelectBrand('all'); setMobileSidebarOpen(false); }}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'all' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => { onSelectBrand('nanova_tees'); setMobileSidebarOpen(false); }}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'nanova_tees' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                    >
+                      Tees
+                    </button>
+                    <button
+                      onClick={() => { onSelectBrand('surprise_nanova'); setMobileSidebarOpen(false); }}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'surprise_nanova' ? 'bg-amber-500 text-black' : 'text-amber-400/90'}`}
+                    >
+                      Gifts
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <nav className="flex-1 overflow-y-auto py-3 space-y-1">
                 {navItems.map((item) => {
@@ -311,7 +345,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
         )}
 
         {/* Content Body (Designer Canvas Pattern with Blueprint Micro-Grid) */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-transparent relative">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden bg-transparent relative">
           {children}
         </main>
       </div>

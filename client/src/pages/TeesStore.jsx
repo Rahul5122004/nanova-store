@@ -49,33 +49,33 @@ export default function TeesStore() {
   });
 
   return (
-    <div className="min-h-screen py-10 bg-transparent">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <div className="min-h-screen py-6 sm:py-10 bg-transparent">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-10">
         {/* Banner */}
-        <div className="relative rounded-3xl p-8 sm:p-12 overflow-hidden bg-gradient-to-r from-zinc-950 via-[#121217] to-zinc-950 border border-zinc-800 shadow-2xl text-white">
-          <div className="max-w-2xl space-y-3 relative z-10">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-400">
-              <Shirt className="w-4 h-4 text-white" />
+        <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-12 overflow-hidden bg-gradient-to-r from-zinc-950 via-[#121217] to-zinc-950 border border-zinc-800 shadow-2xl text-white">
+          <div className="max-w-2xl space-y-2.5 sm:space-y-3 relative z-10">
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold uppercase tracking-widest text-zinc-400">
+              <Shirt className="w-4 h-4 text-white flex-shrink-0" />
               <span>NANOVA TEES • OFFICIAL STOREFRONT</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black font-syne text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-syne text-white tracking-tight leading-tight">
               WEAR YOUR VIBE.
             </h1>
-            <p className="text-sm text-zinc-300">
+            <p className="text-xs sm:text-sm text-zinc-300">
               Heavyweight 240+ GSM dropped shoulder silhouettes, bio-washed combed cotton, puff-print graphics, and bespoke custom tees with interactive 3D inspection.
             </p>
           </div>
         </div>
 
         {/* Search & Filter Controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
           {/* Category Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full lg:w-auto">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shadow-sm ${
+                className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition shadow-sm flex-shrink-0 ${
                   activeCategory === cat.id
                     ? 'bg-zinc-950 text-white shadow-md'
                     : 'bg-[#14141c] text-zinc-300 hover:text-white border border-zinc-800'
@@ -87,9 +87,9 @@ export default function TeesStore() {
           </div>
 
           {/* Search Input & Size Filter */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto flex-shrink-0">
+            <div className="relative flex-1 sm:w-56 lg:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Search tees..."
@@ -99,14 +99,14 @@ export default function TeesStore() {
               />
             </div>
 
-            {/* Size Filter Dropdown */}
-            <div className="flex items-center gap-1 bg-[#14141c] border border-zinc-800 p-1 rounded-xl shadow-sm">
-              <span className="text-[10px] font-bold text-zinc-400 px-2 uppercase">Size:</span>
+            {/* Size Filter Strip */}
+            <div className="flex items-center gap-1 bg-[#14141c] border border-zinc-800 p-1 rounded-xl shadow-sm overflow-x-auto scrollbar-none">
+              <span className="text-[10px] font-bold text-zinc-400 px-2 uppercase flex-shrink-0">Size:</span>
               {sizes.map((s) => (
                 <button
                   key={s}
                   onClick={() => setSelectedSize(s)}
-                  className={`px-2 py-1 rounded text-xs font-bold transition ${
+                  className={`px-2.5 py-1 rounded text-xs font-bold transition flex-shrink-0 ${
                     selectedSize === s
                       ? 'bg-white text-black shadow-sm'
                       : 'text-zinc-400 hover:text-white'

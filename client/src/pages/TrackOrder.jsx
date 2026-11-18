@@ -165,7 +165,7 @@ export default function TrackOrder() {
                 <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
                   Fulfillment Status Timeline
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                   {statuses.map((st, idx) => {
                     const isDone = idx <= currentStepIndex;
                     const isCurrent = idx === currentStepIndex;

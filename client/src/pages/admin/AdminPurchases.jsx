@@ -289,8 +289,8 @@ export default function AdminPurchases() {
                     {purchaseItems.map((item, idx) => {
                       const curProd = products.find((p) => p.id === Number(item.product_id));
                       return (
-                        <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-[#14141c] p-3 rounded-xl border border-zinc-800 text-xs text-white">
-                          <div className="col-span-4">
+                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-[#14141c] p-3 rounded-xl border border-zinc-800 text-xs text-white">
+                          <div className="sm:col-span-4">
                             <select
                               value={item.product_id}
                               onChange={(e) => handleItemChange(idx, 'product_id', e.target.value)}
@@ -302,7 +302,7 @@ export default function AdminPurchases() {
                             </select>
                           </div>
 
-                          <div className="col-span-3">
+                          <div className="sm:col-span-3">
                             <select
                               value={item.variant_id}
                               onChange={(e) => handleItemChange(idx, 'variant_id', e.target.value)}
@@ -316,7 +316,7 @@ export default function AdminPurchases() {
                             </select>
                           </div>
 
-                          <div className="col-span-2">
+                          <div className="sm:col-span-2">
                             <input
                               type="number"
                               placeholder="Qty"
@@ -326,7 +326,7 @@ export default function AdminPurchases() {
                             />
                           </div>
 
-                          <div className="col-span-2">
+                          <div className="sm:col-span-2">
                             <input
                               type="number"
                               step="0.01"
@@ -337,7 +337,7 @@ export default function AdminPurchases() {
                             />
                           </div>
 
-                          <div className="col-span-1 text-center">
+                          <div className="sm:col-span-1 text-right sm:text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(idx)}

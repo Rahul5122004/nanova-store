@@ -32,9 +32,9 @@ export default function ProductImageViewer({
   return (
     <div className="relative w-full bg-[#111116] rounded-3xl border border-zinc-800 p-4 sm:p-6 overflow-hidden shadow-2xl space-y-4">
       {/* Top Floating Badges */}
-      <div className="flex items-center justify-between z-10">
+      <div className="flex flex-wrap items-center justify-between gap-2 z-10">
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-black/80 backdrop-blur-md text-zinc-200 border border-zinc-700/80 shadow-md">
+          <span className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold bg-black/80 backdrop-blur-md text-zinc-200 border border-zinc-700/80 shadow-md">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>HD Studio Photography</span>
           </span>
@@ -61,10 +61,14 @@ export default function ProductImageViewer({
         )}
       </div>
 
-      {/* Main Image Display Box with Interactive Zoom */}
+      {/* Main Image Display Box with Interactive Zoom (Desktop hover only so mobile tap doesn't stick zoomed) */}
       <div
-        className="relative aspect-square sm:aspect-[4/5] max-h-[580px] w-full rounded-2xl overflow-hidden bg-[#181822] border border-zinc-800/80 flex items-center justify-center cursor-crosshair group"
-        onMouseEnter={() => setIsZoomed(true)}
+        className="relative aspect-square sm:aspect-[4/5] max-h-[420px] sm:max-h-[580px] w-full rounded-2xl overflow-hidden bg-[#181822] border border-zinc-800/80 flex items-center justify-center sm:cursor-crosshair group"
+        onMouseEnter={() => {
+          if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+            setIsZoomed(true);
+          }
+        }}
         onMouseLeave={() => setIsZoomed(false)}
         onMouseMove={handleMouseMove}
       >
@@ -83,8 +87,8 @@ export default function ProductImageViewer({
           }
         />
 
-        {/* Hover Hint Overlay */}
-        <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg border border-zinc-700/80 text-[10px] font-semibold text-zinc-300 pointer-events-none flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
+        {/* Hover Hint Overlay (Desktop only) */}
+        <div className="hidden sm:flex absolute bottom-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-lg border border-zinc-700/80 text-[10px] font-semibold text-zinc-300 pointer-events-none items-center gap-1 opacity-80 group-hover:opacity-100 transition">
           <ZoomIn className="w-3 h-3 text-cyan-400" />
           <span>Hover to Zoom In</span>
         </div>

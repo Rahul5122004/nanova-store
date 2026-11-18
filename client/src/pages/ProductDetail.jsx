@@ -101,7 +101,7 @@ export default function ProductDetail() {
         </Link>
 
         {/* Product Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
           {/* Left Column: Real High-Definition Product Photo Gallery */}
           <div className="lg:col-span-7 space-y-4">
             <ProductImageViewer
@@ -112,7 +112,7 @@ export default function ProductDetail() {
             />
 
             {/* Hint Under Viewer */}
-            <div className="flex items-center justify-between text-[11px] text-zinc-500 px-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-zinc-500 px-2">
               <span className="flex items-center gap-1.5 font-medium">
                 100% Real Studio Photography • Exact Front &amp; Back Garment Views
               </span>
@@ -121,7 +121,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Right Column: Product Info & Variant Selectors (Interior Dark Component) */}
-          <div className="lg:col-span-5 bg-[#111116] border border-zinc-800 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-6 text-white transition-colors">
+          <div className="lg:col-span-5 bg-[#111116] border border-zinc-800 p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-5 sm:space-y-6 text-white transition-colors">
             <div>
               {/* Brand Indicator */}
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
@@ -167,7 +167,7 @@ export default function ProductDetail() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {uniqueSizes.map((s) => {
                     const v = product.variants?.find((item) =>
                       item.size === s && (!selectedVariant || item.color === selectedVariant.color)

@@ -173,9 +173,9 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500">
+        <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-[11px] text-zinc-500 text-center sm:text-left">
           <p>© {new Date().getFullYear()} NANOVA. All rights reserved. Managed by one centralized enterprise.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
             <span>Preserving the Original N Logo Identity</span>
             <span>Live Centralized Business Contacts</span>
           </div>
