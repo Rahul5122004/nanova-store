@@ -191,9 +191,93 @@ export default function AdminOrders() {
           </div>
         </div>
 
-        {/* Orders Table */}
+        {/* Orders: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {orders.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No orders match the selected filters.
+              </div>
+            ) : (
+              orders.map((o) => (
+                <div key={o.id} className="p-4 space-y-3 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono font-black text-sm text-white block">#{o.order_number}</span>
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        {new Date(o.created_at).toLocaleDateString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono font-black text-sm text-white block">₹{Number(o.final_amount).toFixed(2)}</span>
+                      {Number(o.discount_amount) > 0 && (
+                        <span className="text-[10px] text-emerald-400 font-bold">
+                          -₹{Number(o.discount_amount).toFixed(2)} disc.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">{o.customer_name}</span>
+                      <span className="text-[10px] text-zinc-400 font-mono">{o.customer_phone}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        o.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                      }`}>
+                        {o.brand_name}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        o.payment_status === 'VERIFIED'
+                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                          : 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                      }`}>
+                        {o.payment_status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {o.items?.length > 0 && (
+                    <div className="bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 space-y-1">
+                      {o.items.map((it, idx) => (
+                        <div key={idx} className="truncate text-[11px] text-zinc-200">
+                          {it.quantity}x {it.product_name} ({it.size}, {it.color})
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={o.order_status}
+                      onChange={(e) => handleUpdateStatus(o.id, e.target.value)}
+                      className="flex-1 bg-[#181822] border border-zinc-700 text-xs rounded-xl px-2.5 py-2 font-semibold text-white cursor-pointer focus:outline-none"
+                    >
+                      <option value="NEW">NEW</option>
+                      <option value="CONFIRMED">CONFIRMED</option>
+                      <option value="PROCESSING">PROCESSING</option>
+                      <option value="READY_TO_SHIP">READY TO SHIP</option>
+                      <option value="SHIPPED">SHIPPED</option>
+                      <option value="DELIVERED">DELIVERED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                    <button
+                      onClick={() => handleViewOrder(o.id)}
+                      className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-extrabold transition flex-shrink-0"
+                    >
+                      View &amp; Discount
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

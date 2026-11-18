@@ -210,9 +210,67 @@ export default function AdminProducts() {
           />
         </div>
 
-        {/* Products Table (Interior Dark Component on White Canvas) */}
+        {/* Products: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-zinc-800">
+            {products.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No products found.
+              </div>
+            ) : (
+              products.map((p) => {
+                const isTees = p.brand_code === 'nanova_tees' || p.brand_id === 1;
+                return (
+                  <div key={p.id} className="p-4 space-y-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-14 bg-zinc-900 rounded-lg p-1 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+                        <img src={p.front_image} alt={p.name} className="w-full h-full object-contain" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-sm text-white block truncate">{p.name}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono block">SKU: {p.sku}</span>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                            isTees ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                          }`}>
+                            {isTees ? 'NANOVA TEES' : 'SURPRISE NANOVA'}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">{p.category_name}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-center">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block">Selling</span>
+                        <span className="font-bold text-white">₹{Number(p.selling_price).toFixed(0)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block">Cost</span>
+                        <span className="text-zinc-300">₹{Number(p.purchase_cost).toFixed(0)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block">Stock</span>
+                        <span className={`font-bold ${p.total_stock <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {p.total_stock} Units
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteProduct(p.id)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Product</span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

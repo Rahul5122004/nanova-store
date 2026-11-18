@@ -182,9 +182,89 @@ export default function AdminInventory() {
           </div>
         </div>
 
-        {/* Inventory Matrix Table */}
+        {/* Inventory Matrix: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List View (Zero horizontal overflow or cut-off columns) */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {items.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No inventory records match the current filter.
+              </div>
+            ) : (
+              items.map((it) => {
+                const isOut = Number(it.stock_quantity) <= 0;
+                const isLow = Number(it.stock_quantity) <= Number(it.low_stock_threshold);
+                return (
+                  <div key={it.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="font-bold text-sm text-white block truncate">{it.product_name}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">SKU: {it.sku}</span>
+                      </div>
+                      {isOut ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-950/80 text-red-300 border border-red-800 flex-shrink-0">
+                          OUT OF STOCK
+                        </span>
+                      ) : isLow ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800 flex-shrink-0">
+                          LOW STOCK
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-800 flex-shrink-0">
+                          IN STOCK
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        it.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                      }`}>
+                        {it.brand_name}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-bold text-white text-[11px]">
+                        Size: {it.size}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border border-white/20 inline-block"
+                          style={{ backgroundColor: it.color_hex || '#000000' }}
+                        />
+                        {it.color}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-center">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block uppercase">Purchased</span>
+                        <span className="font-mono font-bold text-xs text-zinc-200">{it.purchased_quantity}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block uppercase">Sold</span>
+                        <span className="font-mono font-bold text-xs text-zinc-200">{it.sold_quantity}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block uppercase">Remaining</span>
+                        <span className={`font-mono font-black text-sm ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {it.stock_quantity}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleOpenAdjust(it)}
+                      className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-xs font-bold transition active:scale-95"
+                    >
+                      Adjust Stock
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop / Laptop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

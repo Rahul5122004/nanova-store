@@ -63,7 +63,44 @@ export default function AdminCustomers() {
         </div>
 
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {customers.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No customer records found.
+              </div>
+            ) : (
+              customers.map((c) => (
+                <div key={c.id} className="p-4 space-y-3 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-bold text-sm text-white block truncate">{c.full_name}</span>
+                      <span className="text-[11px] font-mono text-zinc-300 block">{c.phone}</span>
+                      {c.email && <span className="text-[10px] text-zinc-400 block truncate">{c.email}</span>}
+                    </div>
+                    <span className="font-mono font-black text-sm text-emerald-400 flex-shrink-0">
+                      ₹{Number(c.total_spent).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-400 bg-[#14141c] px-3 py-2 rounded-xl border border-zinc-800">
+                    <span>{[c.city, c.state].filter(Boolean).join(', ') || 'N/A'}</span>
+                    <span>Orders: <strong className="text-white">{c.total_orders}</strong></span>
+                  </div>
+
+                  <button
+                    onClick={() => handleViewCustomer(c.id)}
+                    className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-xs font-bold transition"
+                  >
+                    View Order History
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

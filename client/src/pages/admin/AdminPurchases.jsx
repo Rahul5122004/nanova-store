@@ -156,9 +156,58 @@ export default function AdminPurchases() {
           </button>
         </div>
 
-        {/* Purchases List */}
+        {/* Purchases: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {purchases.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No purchase orders recorded yet.
+              </div>
+            ) : (
+              purchases.map((p) => (
+                <div key={p.id} className="p-4 space-y-2.5 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono font-bold text-sm text-white block">{p.purchase_number}</span>
+                      <span className="text-[10px] text-zinc-400 font-mono">{p.purchase_date}</span>
+                    </div>
+                    <span className="font-mono font-black text-sm text-emerald-400">
+                      ₹{Number(p.total_amount).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">{p.supplier_name}</span>
+                      <span className="text-[10px] text-zinc-400">{p.supplier_phone}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                      {p.brand_name}
+                    </span>
+                  </div>
+
+                  {p.items?.length > 0 && (
+                    <div className="bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 space-y-1">
+                      {p.items.map((it, idx) => (
+                        <div key={idx} className="text-[11px] text-zinc-200">
+                          {it.product_name} ({it.size}, {it.color}) • {it.quantity} pcs @ ₹{Number(it.unit_cost).toFixed(0)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                    <span>Extra Cost: <strong className="font-mono text-zinc-200">₹{Number(p.additional_expenses).toFixed(2)}</strong></span>
+                    {p.notes && <span className="truncate max-w-[55%]">{p.notes}</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

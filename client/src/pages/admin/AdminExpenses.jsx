@@ -127,11 +127,55 @@ export default function AdminExpenses() {
           ))}
         </div>
 
-        {/* Table */}
-        <div className="glass-panel rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
-              <thead className="bg-zinc-100/90 dark:bg-zinc-900/90 text-[11px] uppercase font-bold text-zinc-600 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+        {/* Expenses: Mobile Cards (< md) + Desktop Table (>= md) */}
+        <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {expenses.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No expense records found.
+              </div>
+            ) : (
+              expenses.map((e) => (
+                <div key={e.id} className="p-4 space-y-2.5 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-sm text-white block">{e.category}</span>
+                      <span className="text-[10px] font-mono text-zinc-400">{e.expense_date}</span>
+                    </div>
+                    <span className="font-mono font-black text-sm text-white">
+                      ₹{Number(e.amount).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                      {e.brand_name || 'Enterprise Shared'}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      {e.receipt_url && (
+                        <a href={e.receipt_url} target="_blank" rel="noreferrer" className="text-cyan-400 font-bold hover:underline">
+                          View Receipt
+                        </a>
+                      )}
+                      <button onClick={() => handleDelete(e.id)} className="text-zinc-400 hover:text-red-400 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  {e.description && (
+                    <p className="text-[11px] text-zinc-300 bg-[#14141c] p-2 rounded-lg border border-zinc-800">
+                      {e.description}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Category</th>
@@ -142,36 +186,36 @@ export default function AdminExpenses() {
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60 font-medium">
+              <tbody className="divide-y divide-zinc-800 font-medium">
                 {expenses.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-zinc-500">No expense records found.</td>
+                    <td colSpan={7} className="py-12 text-center text-zinc-400">No expense records found.</td>
                   </tr>
                 ) : (
                   expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition">
-                      <td className="py-3 px-4 font-mono text-zinc-500 dark:text-zinc-400">{e.expense_date}</td>
-                      <td className="py-3 px-4 font-bold text-zinc-900 dark:text-white">{e.category}</td>
+                    <tr key={e.id} className="hover:bg-zinc-900/60 transition">
+                      <td className="py-3 px-4 font-mono text-zinc-400">{e.expense_date}</td>
+                      <td className="py-3 px-4 font-bold text-white">{e.category}</td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
                           {e.brand_name || 'Enterprise Shared'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 max-w-xs truncate">{e.description}</td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-zinc-900 dark:text-white text-sm">
+                      <td className="py-3 px-4 max-w-xs truncate text-zinc-300">{e.description}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-white text-sm">
                         ₹{Number(e.amount).toFixed(2)}
                       </td>
                       <td className="py-3 px-4 text-right">
                         {e.receipt_url ? (
-                          <a href={e.receipt_url} target="_blank" rel="noreferrer" className="text-cyan-600 dark:text-cyan-400 font-bold hover:underline">
+                          <a href={e.receipt_url} target="_blank" rel="noreferrer" className="text-cyan-400 font-bold hover:underline">
                             View Receipt
                           </a>
                         ) : (
-                          <span className="text-zinc-400">-</span>
+                          <span className="text-zinc-500">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button onClick={() => handleDelete(e.id)} className="p-1 text-zinc-400 hover:text-red-500 transition">
+                        <button onClick={() => handleDelete(e.id)} className="p-1 text-zinc-400 hover:text-red-400 transition">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>

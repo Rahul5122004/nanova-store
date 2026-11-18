@@ -58,9 +58,60 @@ export default function AdminStockHistory() {
           </div>
         </div>
 
-        {/* History Table */}
+        {/* History: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          <div className="overflow-x-auto">
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {history.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                No stock history records found.
+              </div>
+            ) : (
+              history.map((h) => {
+                const isPositive = Number(h.quantity_change) > 0;
+                return (
+                  <div key={h.id} className="p-4 space-y-2.5 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="font-bold text-sm text-white block truncate">{h.product_name}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">
+                          {new Date(h.created_at).toLocaleString('en-IN')} • Ref: {h.reference_id || 'N/A'}
+                        </span>
+                      </div>
+                      <span className={`font-mono font-black text-base flex-shrink-0 ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {isPositive ? `+${h.quantity_change}` : h.quantity_change}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                        {h.transaction_type}
+                      </span>
+                      <span className="text-zinc-300 font-semibold">
+                        {h.size} <span className="text-zinc-400 font-normal">({h.color})</span>
+                      </span>
+                      <span className="ml-auto font-mono text-[11px] text-zinc-400">
+                        {h.previous_stock} → <strong className="text-white">{h.new_stock}</strong>
+                      </span>
+                    </div>
+
+                    {h.reason && (
+                      <p className="text-[11px] text-zinc-300 bg-[#14141c] p-2 rounded-lg border border-zinc-800">
+                        {h.reason}
+                      </p>
+                    )}
+
+                    <div className="text-[10px] text-zinc-400 font-mono">
+                      Recorded by: {h.created_by}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>

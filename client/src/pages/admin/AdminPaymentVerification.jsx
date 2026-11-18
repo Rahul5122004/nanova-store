@@ -59,10 +59,72 @@ export default function AdminPaymentVerification() {
           </p>
         </div>
 
-        <div className="glass-panel rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-700 dark:text-zinc-300">
-              <thead className="bg-zinc-100/90 dark:bg-zinc-900/90 text-[11px] uppercase font-bold text-zinc-600 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-zinc-800">
+            {payments.length === 0 ? (
+              <div className="py-12 px-4 text-center text-xs text-zinc-400">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-zinc-500" />
+                <span>All UPI payments have been verified! No pending transactions.</span>
+              </div>
+            ) : (
+              payments.map((p) => (
+                <div key={p.id} className="p-4 space-y-3 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono font-bold text-sm text-white block">#{p.order_number}</span>
+                      <span className="font-bold text-zinc-200 block">{p.customer_name}</span>
+                      <span className="text-[10px] font-mono text-zinc-400">{p.customer_phone}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono font-black text-sm text-emerald-400 block">₹{Number(p.amount).toFixed(2)}</span>
+                      <span className="text-[10px] text-zinc-400">{p.brand_name}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 bg-[#14141c] p-2.5 rounded-xl border border-zinc-800">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block">UPI UTR / Ref</span>
+                      <span className="font-mono text-amber-300 font-bold">
+                        {p.upi_ref_id || <span className="text-zinc-500 italic">Not entered</span>}
+                      </span>
+                    </div>
+                    {p.screenshot_url ? (
+                      <button
+                        onClick={() => setViewingScreenshot(p.screenshot_url)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>View Proof</span>
+                      </button>
+                    ) : (
+                      <span className="text-zinc-500 text-[11px] italic">No image</span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleVerify(p.id, 'APPROVE')}
+                      className="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition active:scale-95"
+                    >
+                      Approve Payment
+                    </button>
+                    <button
+                      onClick={() => handleVerify(p.id, 'REJECT')}
+                      className="py-2 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 font-bold text-xs transition active:scale-95"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs text-zinc-300">
+              <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>
                   <th className="py-3 px-4">Order ID</th>
                   <th className="py-3 px-4">Customer</th>
@@ -73,43 +135,43 @@ export default function AdminPaymentVerification() {
                   <th className="py-3 px-4 text-right">Verification Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/60 font-medium">
+              <tbody className="divide-y divide-zinc-800 font-medium">
                 {payments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center text-zinc-500">
-                      <Clock className="w-8 h-8 mx-auto mb-2 text-zinc-400 dark:text-zinc-600" />
+                    <td colSpan={7} className="py-16 text-center text-zinc-400">
+                      <Clock className="w-8 h-8 mx-auto mb-2 text-zinc-500" />
                       <span>All UPI payments have been verified! No pending transactions.</span>
                     </td>
                   </tr>
                 ) : (
                   payments.map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition">
-                      <td className="py-3 px-4 font-mono font-bold text-zinc-900 dark:text-white">#{p.order_number}</td>
+                    <tr key={p.id} className="hover:bg-zinc-900/60 transition">
+                      <td className="py-3 px-4 font-mono font-bold text-white">#{p.order_number}</td>
                       <td className="py-3 px-4">
-                        <span className="font-bold text-zinc-900 dark:text-white block">{p.customer_name}</span>
-                        <span className="text-[10px] text-zinc-500">{p.customer_phone}</span>
+                        <span className="font-bold text-white block">{p.customer_name}</span>
+                        <span className="text-[10px] text-zinc-400">{p.customer_phone}</span>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-zinc-700 dark:text-zinc-300">{p.brand_name}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-zinc-900 dark:text-white text-sm">
+                      <td className="py-3 px-4 font-semibold text-zinc-200">{p.brand_name}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-white text-sm">
                         ₹{Number(p.amount).toFixed(2)}
                       </td>
-                      <td className="py-3 px-4 font-mono text-amber-600 dark:text-amber-300 font-bold">
-                        {p.upi_ref_id || <span className="text-zinc-400 italic">Not entered</span>}
+                      <td className="py-3 px-4 font-mono text-amber-300 font-bold">
+                        {p.upi_ref_id || <span className="text-zinc-500 italic">Not entered</span>}
                       </td>
                       <td className="py-3 px-4">
                         {p.screenshot_url ? (
                           <button
                             onClick={() => setViewingScreenshot(p.screenshot_url)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 text-xs font-semibold transition shadow-sm"
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition shadow-sm"
                           >
-                            <Eye className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                            <Eye className="w-3.5 h-3.5 text-cyan-400" />
                             <span>View Image</span>
                           </button>
                         ) : (
-                          <span className="text-zinc-400 text-[11px] italic">No image file</span>
+                          <span className="text-zinc-500 text-[11px] italic">No image file</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right space-x-2">
+                      <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                         <button
                           onClick={() => handleVerify(p.id, 'APPROVE')}
                           className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition active:scale-95 shadow-sm"
@@ -118,7 +180,7 @@ export default function AdminPaymentVerification() {
                         </button>
                         <button
                           onClick={() => handleVerify(p.id, 'REJECT')}
-                          className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 dark:bg-zinc-800 dark:hover:bg-red-950 dark:text-red-400 font-bold text-xs transition active:scale-95"
+                          className="px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 font-bold text-xs transition active:scale-95"
                         >
                           Reject
                         </button>
