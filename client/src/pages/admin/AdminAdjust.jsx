@@ -14,7 +14,8 @@ import {
   Shirt,
   Sparkles,
   ShoppingBag,
-  Edit
+  Edit,
+  Save
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -49,6 +50,91 @@ export default function AdminAdjust() {
   });
   const [processingDanger, setProcessingDanger] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
+
+  // Quick Adjust Modal State in Adjust Screen
+  const [adjustingProduct, setAdjustingProduct] = useState(null);
+  const [adjustForm, setAdjustForm] = useState({
+    selling_price: '',
+    purchase_cost: '',
+    variants: []
+  });
+  const [savingAdjust, setSavingAdjust] = useState(false);
+  const [adjustError, setAdjustError] = useState('');
+
+  const handleOpenAdjust = (prod) => {
+    setAdjustingProduct(prod);
+    setAdjustError('');
+    const existingVariants = prod.variants && prod.variants.length > 0 ? prod.variants : [
+      { id: null, size: 'Standard', color: 'Default', stock_quantity: prod.total_stock || 0 }
+    ];
+    setAdjustForm({
+      selling_price: prod.selling_price,
+      purchase_cost: prod.purchase_cost,
+      variants: existingVariants.map((v) => ({
+        id: v.id,
+        product_id: prod.id,
+        size: v.size || 'Standard',
+        color: v.color || 'Default',
+        current_stock: Number(v.stock_quantity || 0),
+        new_stock: Number(v.stock_quantity || 0)
+      }))
+    });
+  };
+
+  const handleSaveAdjust = async (e) => {
+    e.preventDefault();
+    setSavingAdjust(true);
+    setAdjustError('');
+
+    try {
+      // 1. Update product prices
+      const form = new FormData();
+      form.append('name', adjustingProduct.name);
+      form.append('selling_price', adjustForm.selling_price);
+      form.append('purchase_cost', adjustForm.purchase_cost);
+
+      const pRes = await fetch(`/api/products/${adjustingProduct.id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
+
+      if (!pRes.ok) {
+        const j = await pRes.json();
+        throw new Error(j.message || 'Failed to update product prices.');
+      }
+
+      // 2. Adjust variants stock if changed
+      for (const v of adjustForm.variants) {
+        const diff = Number(v.new_stock) - Number(v.current_stock);
+        if (diff !== 0 || v.id === null) {
+          await fetch('/api/inventory/adjust', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              variant_id: v.id,
+              product_id: adjustingProduct.id,
+              new_stock: v.new_stock,
+              quantity_change: diff,
+              reason: 'Adjust from Admin Adjust Screen'
+            })
+          });
+        }
+      }
+
+      setAdjustingProduct(null);
+      setActionMessage({ type: 'success', text: `Adjusted stock & price for "${adjustingProduct.name}" successfully.` });
+      setTimeout(() => setActionMessage(null), 4000);
+      loadProducts();
+    } catch (err) {
+      setAdjustError(err.message);
+    } finally {
+      setSavingAdjust(false);
+    }
+  };
 
   // Load Products
   const loadProducts = () => {
@@ -566,7 +652,16 @@ export default function AdminAdjust() {
                       <div key={p.id} className="p-4 space-y-3 text-xs">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-14 bg-zinc-900 rounded-lg p-1 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                            <img src={p.front_image} alt={p.name} className="w-full h-full object-contain" />
+                            {p.front_image ? (
+                              <img
+                                src={p.front_image}
+                                alt={p.name}
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-zinc-500" />
+                            )}
                           </div>
                           <div className="min-w-0 flex-1">
                             <span className="font-bold text-sm text-white block truncate">{p.name}</span>
@@ -591,18 +686,28 @@ export default function AdminAdjust() {
                           <div>
                             <span className="text-[10px] text-zinc-400 block">Stock</span>
                             <span className={`font-bold ${p.total_stock <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                              {p.total_stock}
+                              {p.total_stock ?? 0} Units
                             </span>
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => handleDeleteProduct(p)}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete Product</span>
-                        </button>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <button
+                            onClick={() => handleOpenAdjust(p)}
+                            className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs font-bold transition"
+                          >
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            <span>Adjust Stock</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteProduct(p)}
+                            className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </div>
                     );
                   })
@@ -618,8 +723,8 @@ export default function AdminAdjust() {
                       <th className="py-3 px-4">Category</th>
                       <th className="py-3 px-4">Price (INR)</th>
                       <th className="py-3 px-4">Cost (INR)</th>
-                      <th className="py-3 px-4">Stock</th>
-                      <th className="py-3 px-4 text-right">Delete Action</th>
+                      <th className="py-3 px-4">Stock Units</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
@@ -642,7 +747,16 @@ export default function AdminAdjust() {
                           <tr key={p.id} className="hover:bg-zinc-900/60 transition">
                             <td className="py-3 px-4 flex items-center gap-3">
                               <div className="w-12 h-14 bg-zinc-900 rounded-lg p-1 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                                <img src={p.front_image} alt={p.name} className="w-full h-full object-contain" />
+                                {p.front_image ? (
+                                  <img
+                                    src={p.front_image}
+                                    alt={p.name}
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <Package className="w-5 h-5 text-zinc-500" />
+                                )}
                               </div>
                               <div>
                                 <span className="font-bold text-white block">{p.name}</span>
@@ -670,19 +784,30 @@ export default function AdminAdjust() {
 
                             <td className="py-3 px-4">
                               <span className={`font-bold ${p.total_stock <= 5 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                {p.total_stock} Units
+                                {p.total_stock ?? 0} Units
                               </span>
                             </td>
 
                             <td className="py-3 px-4 text-right">
-                              <button
-                                onClick={() => handleDeleteProduct(p)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition active:scale-95"
-                                title="Delete Product"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Delete</span>
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleOpenAdjust(p)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs font-bold transition active:scale-95"
+                                  title="Adjust Stock Units & Prices"
+                                >
+                                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                                  <span>Adjust Stock</span>
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteProduct(p)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition active:scale-95"
+                                  title="Delete Product"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -839,6 +964,143 @@ export default function AdminAdjust() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* QUICK ADJUST MODAL IN ADJUST SCREEN */}
+        {adjustingProduct && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-[#0c0c11] border border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-white">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-indigo-400 block">Quick Adjust Stock &amp; Price</span>
+                  <h3 className="font-bold text-base text-white">{adjustingProduct.name}</h3>
+                </div>
+                <button
+                  onClick={() => setAdjustingProduct(null)}
+                  className="p-1 text-zinc-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {adjustError && (
+                <div className="p-3 bg-red-950 border border-red-800 text-red-200 text-xs rounded-xl">
+                  {adjustError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveAdjust} className="space-y-4">
+                {/* Price Adjustments */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-300 block mb-1">
+                      Selling Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={adjustForm.selling_price}
+                      onChange={(e) => setAdjustForm({ ...adjustForm, selling_price: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 px-3 py-2 text-xs rounded-xl text-white font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-300 block mb-1">
+                      Cost Price / COGS (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={adjustForm.purchase_cost}
+                      onChange={(e) => setAdjustForm({ ...adjustForm, purchase_cost: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 px-3 py-2 text-xs rounded-xl text-orange-300 font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Variant Stock Adjustments */}
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-300 block mb-1.5">
+                    Stock Quantity / Units
+                  </label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {adjustForm.variants.map((v, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-2.5 bg-zinc-950 rounded-xl border border-zinc-800 text-xs"
+                      >
+                        <div>
+                          <span className="font-bold text-white block">
+                            Size: {v.size} {v.color && `• ${v.color}`}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Current in DB: {v.current_stock} Units</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = Math.max(0, updated[i].new_stock - 1);
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center"
+                          >
+                            -
+                          </button>
+
+                          <input
+                            type="number"
+                            min="0"
+                            value={v.new_stock}
+                            onChange={(e) => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = Math.max(0, parseInt(e.target.value, 10) || 0);
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-16 bg-zinc-900 border border-zinc-700 py-1 text-center text-xs font-mono font-bold text-white rounded-lg"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = updated[i].new_stock + 1;
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustingProduct(null)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingAdjust}
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{savingAdjust ? 'Saving...' : 'Save Adjustments'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

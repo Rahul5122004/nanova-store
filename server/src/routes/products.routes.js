@@ -166,7 +166,11 @@ router.post(
         is_featured = 1,
         is_new_arrival = 1,
         is_best_seller = 0,
-        variantsJson
+        variantsJson,
+        variants: bodyVariants,
+        initial_stock,
+        stock_quantity,
+        units
       } = req.body;
 
       const uploadedFile = req.files?.find(f => f.fieldname === 'image' || f.fieldname === 'front_image') || req.files?.[0];
@@ -208,14 +212,24 @@ router.post(
 
       const productId = prodRes.insertId;
 
-      // Parse and insert variants
+      // Parse and insert variants (supports variants, variantsJson, and direct stock units)
+      const rawVariants = req.body.variants || req.body.variantsJson || bodyVariants;
       let variantsList = [];
-      if (variantsJson) {
+      if (rawVariants) {
         try {
-          variantsList = JSON.parse(variantsJson);
+          variantsList = typeof rawVariants === 'string' ? JSON.parse(rawVariants) : rawVariants;
         } catch (e) {
           variantsList = [];
         }
+      }
+
+      const directUnits = Number(initial_stock || stock_quantity || units || req.body.initial_stock || req.body.stock_quantity || req.body.units || 0);
+
+      // If variants array is empty, automatically create a standard variant with directUnits
+      if (!Array.isArray(variantsList) || variantsList.length === 0) {
+        variantsList = [
+          { size: 'Standard', color: 'Default', color_hex: '#ffffff', stock_quantity: directUnits || 10, low_stock_threshold: 5 }
+        ];
       }
 
       for (const v of variantsList) {
@@ -321,6 +335,25 @@ router.put(
           id
         ]
       );
+
+      // Also update single variant stock if stock_quantity or initial_stock is provided
+      const directUnits = req.body.stock_quantity ?? req.body.initial_stock ?? req.body.units;
+      if (directUnits !== undefined && directUnits !== null && !isNaN(directUnits)) {
+        const targetUnits = Math.max(0, parseInt(directUnits, 10));
+        const vars = await query('SELECT id, stock_quantity FROM product_variants WHERE product_id = ? ORDER BY id ASC', [id]);
+        if (vars.length > 0) {
+          const firstV = vars[0];
+          const diff = targetUnits - Number(firstV.stock_quantity);
+          await query('UPDATE product_variants SET stock_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [targetUnits, firstV.id]);
+          if (diff !== 0) {
+            await query(
+              `INSERT INTO inventory_transactions (product_id, variant_id, brand_id, transaction_type, quantity_change, previous_stock, new_stock, reference_id, reason, created_by)
+               VALUES (?, ?, ?, 'ADJUSTMENT', ?, ?, ?, ?, 'Stock update via Product Edit', ?)`,
+              [id, firstV.id, existing.brand_id, diff, firstV.stock_quantity, targetUnits, `ADJ-${Date.now()}`, req.admin.username]
+            );
+          }
+        }
+      }
 
       res.json({
         success: true,

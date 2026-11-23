@@ -49,6 +49,7 @@ export default function AdminProducts() {
     description: '',
     selling_price: '',
     purchase_cost: '',
+    initial_stock: 20,
     model_3d_type: 'garment',
     customization_allowed: 0,
     customization_placeholder: '',
@@ -177,6 +178,9 @@ export default function AdminProducts() {
       Object.keys(formData).forEach((k) => data.append(k, formData[k]));
       if (imageFile) data.append('front_image', imageFile);
       data.append('variants', JSON.stringify(variantsList));
+      data.append('variantsJson', JSON.stringify(variantsList));
+      data.append('initial_stock', formData.initial_stock || 20);
+      data.append('stock_quantity', formData.initial_stock || 20);
 
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -200,6 +204,7 @@ export default function AdminProducts() {
         description: '',
         selling_price: '',
         purchase_cost: '',
+        initial_stock: 20,
         model_3d_type: 'garment',
         customization_allowed: 0,
         customization_placeholder: '',
@@ -232,15 +237,19 @@ export default function AdminProducts() {
   const handleOpenAdjust = (prod) => {
     setAdjustingProduct(prod);
     setAdjustError('');
+    const existingVariants = prod.variants && prod.variants.length > 0 ? prod.variants : [
+      { id: null, size: 'Standard', color: 'Default', stock_quantity: prod.total_stock || 0 }
+    ];
     setAdjustForm({
       selling_price: prod.selling_price,
       purchase_cost: prod.purchase_cost,
-      variants: (prod.variants || []).map((v) => ({
+      variants: existingVariants.map((v) => ({
         id: v.id,
-        size: v.size,
-        color: v.color,
-        current_stock: Number(v.stock_quantity),
-        new_stock: Number(v.stock_quantity)
+        product_id: prod.id,
+        size: v.size || 'Standard',
+        color: v.color || 'Default',
+        current_stock: Number(v.stock_quantity || 0),
+        new_stock: Number(v.stock_quantity || 0)
       }))
     });
   };
@@ -272,7 +281,7 @@ export default function AdminProducts() {
       // 2. Adjust variants stock if changed
       for (const v of adjustForm.variants) {
         const diff = Number(v.new_stock) - Number(v.current_stock);
-        if (diff !== 0) {
+        if (diff !== 0 || v.id === null) {
           await fetch('/api/inventory/adjust', {
             method: 'POST',
             headers: {
@@ -281,9 +290,10 @@ export default function AdminProducts() {
             },
             body: JSON.stringify({
               variant_id: v.id,
-              type: diff > 0 ? 'ADD' : 'REDUCE',
-              quantity_change: Math.abs(diff),
-              reason: 'Quick Adjust from Combined Products Screen'
+              product_id: adjustingProduct.id,
+              new_stock: v.new_stock,
+              quantity_change: diff,
+              reason: 'Quick Adjust from Products Screen'
             })
           });
         }
@@ -840,6 +850,27 @@ export default function AdminProducts() {
                       value={formData.purchase_cost}
                       onChange={(e) => setFormData({ ...formData, purchase_cost: e.target.value })}
                       className="w-full bg-[#181822] border border-zinc-700 text-white placeholder-zinc-500 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-zinc-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-zinc-300">Initial Stock Units (Quantity) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      required
+                      placeholder="20"
+                      value={formData.initial_stock}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        setFormData({ ...formData, initial_stock: val });
+                        if (formData.brand_id === 2 || variantsList.length <= 1) {
+                          setVariantsList([
+                            { size: 'Standard', color: 'Default', color_hex: '#ffffff', stock_quantity: val, low_stock_threshold: 5 }
+                          ]);
+                        }
+                      }}
+                      className="w-full bg-[#181822] border border-zinc-700 text-white placeholder-zinc-500 px-3.5 py-2.5 text-xs rounded-xl font-mono font-bold focus:outline-none focus:border-zinc-500"
                     />
                   </div>
                 </div>

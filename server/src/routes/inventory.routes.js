@@ -105,39 +105,87 @@ router.get('/alerts', authenticateAdmin, async (req, res) => {
  */
 router.post('/adjust', authenticateAdmin, async (req, res) => {
   try {
-    const { variant_id, type = 'ADJUSTMENT', quantity_change, reason } = req.body;
+    const { variant_id, product_id, type = 'ADJUSTMENT', quantity_change, new_stock, reason } = req.body;
 
-    if (!variant_id || !quantity_change || !reason) {
+    if (!variant_id && !product_id) {
       return res.status(400).json({
         success: false,
-        message: 'variant_id, quantity_change (non-zero), and a detailed reason are required.'
+        message: 'variant_id or product_id is required.'
       });
     }
 
-    const delta = parseInt(quantity_change, 10);
-    if (isNaN(delta) || delta === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'quantity_change must be a non-zero integer.'
-      });
-    }
+    let variant = null;
+    if (variant_id) {
+      variant = await getOne(
+        `SELECT pv.*, p.brand_id, p.name as product_name, p.sku as product_sku
+         FROM product_variants pv
+         JOIN products p ON pv.product_id = p.id
+         WHERE pv.id = ?`,
+        [variant_id]
+      );
+    } else if (product_id) {
+      variant = await getOne(
+        `SELECT pv.*, p.brand_id, p.name as product_name, p.sku as product_sku
+         FROM product_variants pv
+         JOIN products p ON pv.product_id = p.id
+         WHERE pv.product_id = ?
+         ORDER BY pv.id ASC LIMIT 1`,
+        [product_id]
+      );
 
-    const variant = await getOne(
-      `SELECT pv.*, p.brand_id, p.name as product_name
-       FROM product_variants pv
-       JOIN products p ON pv.product_id = p.id
-       WHERE pv.id = ?`,
-      [variant_id]
-    );
+      // If no variant exists at all for this product, auto-create a standard variant
+      if (!variant) {
+        const prod = await getOne('SELECT id, sku, brand_id, name FROM products WHERE id = ?', [product_id]);
+        if (!prod) {
+          return res.status(404).json({ success: false, message: 'Product not found.' });
+        }
+        const varSku = `${prod.sku || 'SKU'}-STD-DEFAULT`.toUpperCase();
+        const targetUnits = Math.max(0, parseInt(new_stock ?? quantity_change ?? 0, 10));
+        const vRes = await query(
+          `INSERT INTO product_variants (product_id, size, color, color_hex, sku, stock_quantity, purchased_quantity, sold_quantity, low_stock_threshold)
+           VALUES (?, 'Standard', 'Default', '#ffffff', ?, ?, ?, 0, 5)`,
+          [prod.id, varSku, targetUnits, targetUnits]
+        );
+        if (targetUnits > 0) {
+          await query(
+            `INSERT INTO inventory_transactions (product_id, variant_id, brand_id, transaction_type, quantity_change, previous_stock, new_stock, reference_id, reason, created_by)
+             VALUES (?, ?, ?, 'ADJUSTMENT', ?, 0, ?, ?, ?, ?)`,
+            [prod.id, vRes.insertId, prod.brand_id, targetUnits, targetUnits, `ADJ-${Date.now()}`, reason || 'Initial stock assignment', req.admin.username]
+          );
+        }
+        return res.json({ success: true, message: 'Stock units assigned successfully.' });
+      }
+    }
 
     if (!variant) {
       return res.status(404).json({ success: false, message: 'Variant not found.' });
     }
 
-    const previousStock = Number(variant.stock_quantity);
-    const newStock = previousStock + delta;
+    const previousStock = Number(variant.stock_quantity || 0);
+    let delta = 0;
 
-    if (newStock < 0) {
+    if (new_stock !== undefined && new_stock !== null && !isNaN(new_stock)) {
+      const targetUnits = Math.max(0, parseInt(new_stock, 10));
+      delta = targetUnits - previousStock;
+    } else if (quantity_change !== undefined && quantity_change !== null) {
+      const parsedDelta = parseInt(quantity_change, 10);
+      if (!isNaN(parsedDelta)) {
+        if (type === 'REDUCE' || type === 'DAMAGE') {
+          delta = -Math.abs(parsedDelta);
+        } else if (type === 'ADD' || type === 'RETURN') {
+          delta = Math.abs(parsedDelta);
+        } else {
+          delta = parsedDelta;
+        }
+      }
+    }
+
+    if (delta === 0) {
+      return res.json({ success: true, message: 'Stock is already up to date.' });
+    }
+
+    const calculatedNewStock = previousStock + delta;
+    if (calculatedNewStock < 0) {
       return res.status(400).json({
         success: false,
         message: `Cannot reduce stock below zero. Current stock is ${previousStock}, requested deduction is ${Math.abs(delta)}.`
@@ -148,7 +196,7 @@ router.post('/adjust', authenticateAdmin, async (req, res) => {
       // 1. Update variant stock
       await tx.query(
         'UPDATE product_variants SET stock_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [newStock, variant_id]
+        [calculatedNewStock, variant.id]
       );
 
       // 2. Record inventory transaction
@@ -159,17 +207,25 @@ router.post('/adjust', authenticateAdmin, async (req, res) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           variant.product_id,
-          variant_id,
+          variant.id,
           variant.brand_id,
           type.toUpperCase(),
           delta,
           previousStock,
-          newStock,
+          calculatedNewStock,
           `ADJ-${Date.now()}`,
-          reason,
+          reason || 'Manual Admin Stock Adjustment',
           req.admin.username
         ]
       );
+    });
+
+    res.json({
+      success: true,
+      message: 'Stock adjusted successfully.',
+      variant_id: variant.id,
+      previous_stock: previousStock,
+      new_stock: calculatedNewStock
     });
 
     // Send notification if now out of stock or low stock
