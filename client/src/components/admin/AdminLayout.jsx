@@ -28,6 +28,7 @@ import {
   Building2,
   ExternalLink,
   Instagram,
+  ShoppingBag,
   Sun,
   Moon,
   ChevronDown,
@@ -101,7 +102,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
   const advancedNavItems = [
     { id: 'adjust', label: 'Data Reset & Cleanups', path: '/admin/adjust', icon: SlidersHorizontal },
     { id: 'expenses', label: 'Expenses & Overhead', path: '/admin/expenses', icon: TrendingUp },
-    { id: 'purchases', label: 'Supplier Purchases', path: '/admin/purchases', icon: ShoppingBagIcon },
+    { id: 'purchases', label: 'Supplier Purchases', path: '/admin/purchases', icon: ShoppingBag },
     { id: 'inventory', label: 'Size+Color Matrix', path: '/admin/inventory', icon: Layers },
     { id: 'stock-history', label: 'Stock Audit History', path: '/admin/stock-history', icon: History },
     { id: 'payment-verification', label: 'Payment Approvals', path: '/admin/payment-verification', icon: CheckSquare },

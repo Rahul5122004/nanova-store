@@ -232,6 +232,7 @@ router.post(
         ];
       }
 
+      const createdVariantsInfo = [];
       for (const v of variantsList) {
         const vSku = `${finalSku}-${(v.size || 'STD').replace(/\s+/g, '')}-${(v.color || 'CLR').replace(/\s+/g, '')}`.toUpperCase();
         const initStock = Number(v.stock_quantity || 0);
@@ -242,12 +243,53 @@ router.post(
           [productId, v.size, v.color, v.color_hex || '#000000', vSku, initStock, initStock, v.low_stock_threshold || 5]
         );
 
+        createdVariantsInfo.push({
+          variantId: vRes.insertId,
+          size: v.size || 'Standard',
+          color: v.color || 'Default',
+          stock: initStock
+        });
+
         if (initStock > 0) {
           await query(
             `INSERT INTO inventory_transactions (product_id, variant_id, brand_id, transaction_type, quantity_change, previous_stock, new_stock, reference_id, reason, created_by)
              VALUES (?, ?, ?, 'PURCHASE', ?, 0, ?, 'INITIAL-PRODUCT-CREATION', 'Initial stock assignment on product create', ?)`,
             [productId, vRes.insertId, brand_id, initStock, initStock, req.admin.username]
           );
+        }
+      }
+
+      // Automatically register initial procurement batch in Supplier Purchases
+      const totalUnits = createdVariantsInfo.reduce((sum, item) => sum + item.stock, 0);
+      const unitCost = Number(purchase_cost || 0);
+      if (totalUnits > 0) {
+        try {
+          const supplier = await getOne(
+            'SELECT id FROM suppliers WHERE id = ? OR 1=1 ORDER BY id ASC LIMIT 1',
+            [Number(brand_id) === 2 ? 2 : 1]
+          );
+          const supplierId = supplier ? supplier.id : 1;
+          const poNumber = `PO-${Number(brand_id) === 2 ? 'SN' : 'NT'}-${Date.now().toString().slice(-6)}`;
+          const totalAmount = totalUnits * unitCost;
+          const todayDate = new Date().toISOString().split('T')[0];
+
+          const purRes = await query(
+            `INSERT INTO purchases (purchase_number, supplier_id, brand_id, purchase_date, total_amount, additional_expenses, notes, created_by)
+             VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+            [poNumber, supplierId, brand_id, todayDate, totalAmount, `Initial stock procurement for "${name}"`, req.admin.username]
+          );
+
+          for (const vi of createdVariantsInfo) {
+            if (vi.stock > 0) {
+              await query(
+                `INSERT INTO purchase_items (purchase_id, product_id, variant_id, size, color, quantity, unit_cost, total_cost)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [purRes.insertId, productId, vi.variantId, vi.size, vi.color, vi.stock, unitCost, vi.stock * unitCost]
+              );
+            }
+          }
+        } catch (poErr) {
+          console.warn('[Auto-Purchase Warning]:', poErr.message);
         }
       }
 

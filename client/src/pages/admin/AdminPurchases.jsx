@@ -193,140 +193,130 @@ export default function AdminPurchases() {
 
         {/* Purchases: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          {/* Mobile Cards */}
-          <div className="md:hidden divide-y divide-zinc-800">
-            {purchases.length === 0 ? (
-              <div className="py-12 px-4 text-center space-y-3">
-                <Package className="w-10 h-10 text-zinc-600 mx-auto" />
-                <p className="text-sm font-bold text-white">No purchase orders recorded yet</p>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                  Record new procurement batches or populate initial supplier batches to track unit intake.
-                </p>
-                <div className="flex items-center justify-center gap-2 pt-2">
-                  <button
-                    onClick={handleSeedPurchases}
-                    disabled={seeding}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
-                    <span>{seeding ? 'Loading...' : 'Populate Sample Purchases'}</span>
-                  </button>
-                </div>
+          {purchases.length === 0 ? (
+            <div className="py-16 px-4 text-center space-y-4 max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto shadow-inner">
+                <Package className="w-7 h-7 text-zinc-500" />
               </div>
-            ) : (
-              purchases.map((p) => (
-                <div key={p.id} className="p-4 space-y-2.5 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="font-mono font-bold text-sm text-white block">{p.purchase_number}</span>
-                      <span className="text-[10px] text-zinc-400 font-mono">{p.purchase_date}</span>
-                    </div>
-                    <span className="font-mono font-black text-sm text-emerald-400">
-                      ₹{Number(p.total_amount).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">{p.supplier_name}</span>
-                      <span className="text-[10px] text-zinc-400">{p.supplier_phone}</span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
-                      {p.brand_name}
-                    </span>
-                  </div>
-
-                  {p.items?.length > 0 && (
-                    <div className="bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 space-y-1">
-                      {p.items.map((it, idx) => (
-                        <div key={idx} className="text-[11px] text-zinc-200">
-                          {it.product_name} ({it.size}, {it.color}) • {it.quantity} pcs @ ₹{Number(it.unit_cost).toFixed(0)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                    <span>Extra Cost: <strong className="font-mono text-zinc-200">₹{Number(p.additional_expenses).toFixed(2)}</strong></span>
-                    {p.notes && <span className="truncate max-w-[55%]">{p.notes}</span>}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-300">
-              <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
-                <tr>
-                  <th className="py-3 px-4">Purchase ID</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Supplier</th>
-                  <th className="py-3 px-4">Brand</th>
-                  <th className="py-3 px-4">Items Summary</th>
-                  <th className="py-3 px-4">Total Amount</th>
-                  <th className="py-3 px-4">Extra Cost</th>
-                  <th className="py-3 px-4">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800 font-medium">
-                {purchases.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-zinc-400">
-                      <div className="space-y-3">
-                        <Package className="w-10 h-10 text-zinc-600 mx-auto" />
-                        <p className="text-sm font-bold text-white">No purchase orders recorded yet</p>
-                        <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                          Click below to load sample supplier purchase batches for inventory tracking.
-                        </p>
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                          <button
-                            onClick={handleSeedPurchases}
-                            disabled={seeding}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
-                          >
-                            <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
-                            <span>{seeding ? 'Loading...' : 'Populate Sample Purchases'}</span>
-                          </button>
-                        </div>
+              <h3 className="text-base font-bold text-white">No Purchase Orders Recorded Yet</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Record new procurement batches from your fabric or packaging suppliers, or populate sample purchase batches to track unit intake.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowAddModal(true);
+                    if (purchaseItems.length === 0) handleAddItem();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-extrabold text-xs flex items-center gap-2 shadow-lg transition active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Record New Purchase Batch</span>
+                </button>
+                <button
+                  onClick={handleSeedPurchases}
+                  disabled={seeding}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition active:scale-95"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                  <span>{seeding ? 'Loading...' : 'Populate Sample Purchases'}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-zinc-800">
+                {purchases.map((p) => (
+                  <div key={p.id} className="p-4 space-y-2.5 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono font-bold text-sm text-white block">{p.purchase_number}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">{p.purchase_date}</span>
                       </div>
-                    </td>
-                  </tr>
-                ) : (
-                  purchases.map((p) => (
-                    <tr key={p.id} className="hover:bg-zinc-900/60 transition">
-                      <td className="py-3 px-4 font-mono font-bold text-white">{p.purchase_number}</td>
-                      <td className="py-3 px-4 font-mono text-zinc-400">{p.purchase_date}</td>
-                      <td className="py-3 px-4">
+                      <span className="font-mono font-black text-sm text-emerald-400">
+                        ₹{Number(p.total_amount).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
                         <span className="font-bold text-white block">{p.supplier_name}</span>
                         <span className="text-[10px] text-zinc-400">{p.supplier_phone}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
-                          {p.brand_name}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-zinc-200">
-                        {p.items?.map((it, idx) => (
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                        {p.brand_name}
+                      </span>
+                    </div>
+
+                    {p.items?.length > 0 && (
+                      <div className="bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 space-y-1">
+                        {p.items.map((it, idx) => (
                           <div key={idx} className="text-[11px] text-zinc-200">
                             {it.product_name} ({it.size}, {it.color}) • {it.quantity} pcs @ ₹{Number(it.unit_cost).toFixed(0)}
                           </div>
                         ))}
-                      </td>
-                      <td className="py-3 px-4 font-bold text-white font-mono text-sm">
-                        ₹{Number(p.total_amount).toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-zinc-400 font-mono">
-                        ₹{Number(p.additional_expenses).toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-zinc-400 max-w-xs truncate">{p.notes || '-'}</td>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                      <span>Extra Cost: <strong className="font-mono text-zinc-200">₹{Number(p.additional_expenses).toFixed(2)}</strong></span>
+                      {p.notes && <span className="truncate max-w-[55%]">{p.notes}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-zinc-300">
+                  <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
+                    <tr>
+                      <th className="py-3 px-4">Purchase ID</th>
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Supplier</th>
+                      <th className="py-3 px-4">Brand</th>
+                      <th className="py-3 px-4">Items Summary</th>
+                      <th className="py-3 px-4">Total Amount</th>
+                      <th className="py-3 px-4">Extra Cost</th>
+                      <th className="py-3 px-4">Notes</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800 font-medium">
+                    {purchases.map((p) => (
+                      <tr key={p.id} className="hover:bg-zinc-900/60 transition">
+                        <td className="py-3 px-4 font-mono font-bold text-white">{p.purchase_number}</td>
+                        <td className="py-3 px-4 font-mono text-zinc-400">{p.purchase_date}</td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-white block">{p.supplier_name}</span>
+                          <span className="text-[10px] text-zinc-400">{p.supplier_phone}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                            {p.brand_name}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-zinc-200">
+                          {p.items?.map((it, idx) => (
+                            <div key={idx} className="text-[11px] text-zinc-200">
+                              {it.product_name} ({it.size}, {it.color}) • {it.quantity} pcs @ ₹{Number(it.unit_cost).toFixed(0)}
+                            </div>
+                          ))}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-white font-mono text-sm">
+                          ₹{Number(p.total_amount).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-400 font-mono">
+                          ₹{Number(p.additional_expenses).toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-zinc-400 max-w-xs truncate">{p.notes || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
         {/* RECORD PURCHASE MODAL */}

@@ -197,223 +197,252 @@ export default function AdminInventory() {
               onClick={() => setLowStockOnly(!lowStockOnly)}
               className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition ${
                 lowStockOnly
-                  ? 'bg-amber-400 text-black border-amber-300 shadow-md'
+                  ? 'bg-amber-400 text-black border-amber-300 shadow-md ring-2 ring-amber-400/40'
                   : 'bg-[#111116] hover:bg-zinc-800 text-zinc-300 border-zinc-700'
               }`}
             >
-              <AlertTriangle className="w-4 h-4" />
-              <span>Low Stock Alerts Only</span>
+              <AlertTriangle className={`w-4 h-4 ${lowStockOnly ? 'text-black' : 'text-amber-400'}`} />
+              <span>{lowStockOnly ? 'Alerts Filter: ON (Click to Show All)' : 'Low Stock Alerts Only'}</span>
             </button>
           </div>
         </div>
 
-        {/* Inventory Matrix: Mobile Cards (< md) + Desktop Table (>= md) */}
+        {/* Active Filter Notice */}
+        {lowStockOnly && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 shadow-md">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
+              <span>Showing only variants with low stock (units &le; threshold).</span>
+            </div>
+            <button
+              onClick={() => setLowStockOnly(false)}
+              className="self-start sm:self-auto px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-[11px] transition shadow"
+            >
+              Show All Stock Units
+            </button>
+          </div>
+        )}
+
+        {/* Inventory Matrix: Responsive Clean Layout */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
-          {/* Mobile Card List View (Zero horizontal overflow or cut-off columns) */}
-          <div className="md:hidden divide-y divide-zinc-800">
-            {items.length === 0 ? (
-              <div className="py-12 px-4 text-center space-y-3">
-                <Package className="w-10 h-10 text-zinc-600 mx-auto" />
-                <p className="text-sm font-bold text-white">No inventory records found</p>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                  There are no variants or stock records matching this view. You can populate the complete catalog and stock now.
-                </p>
-                <div className="flex items-center justify-center gap-2 pt-2">
-                  <button
-                    onClick={handleSeedCatalog}
-                    disabled={seeding}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
-                    <span>{seeding ? 'Loading Stock...' : 'Populate Sample Catalog & Stock'}</span>
-                  </button>
-                </div>
+          {items.length === 0 ? (
+            <div className="py-16 px-4 text-center space-y-4 max-w-md mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto shadow-inner">
+                <Package className="w-7 h-7 text-zinc-500" />
               </div>
-            ) : (
-              items.map((it) => {
-                const isOut = Number(it.stock_quantity) <= 0;
-                const isLow = Number(it.stock_quantity) <= Number(it.low_stock_threshold);
-                return (
-                  <div key={it.id} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="font-bold text-sm text-white block truncate">{it.product_name}</span>
-                        <span className="text-[10px] text-zinc-400 font-mono">SKU: {it.sku}</span>
-                      </div>
-                      {isOut ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-950/80 text-red-300 border border-red-800 flex-shrink-0">
-                          OUT OF STOCK
-                        </span>
-                      ) : isLow ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800 flex-shrink-0">
-                          LOW STOCK
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-800 flex-shrink-0">
-                          IN STOCK
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        it.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                      }`}>
-                        {it.brand_name}
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-bold text-white text-[11px]">
-                        Size: {it.size}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full border border-white/20 inline-block"
-                          style={{ backgroundColor: it.color_hex || '#000000' }}
-                        />
-                        {it.color}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-center">
-                      <div>
-                        <span className="text-[10px] text-zinc-400 block uppercase">Purchased</span>
-                        <span className="font-mono font-bold text-xs text-zinc-200">{it.purchased_quantity}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-zinc-400 block uppercase">Sold</span>
-                        <span className="font-mono font-bold text-xs text-zinc-200">{it.sold_quantity}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-zinc-400 block uppercase">Remaining</span>
-                        <span className={`font-mono font-black text-sm ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
-                          {it.stock_quantity}
-                        </span>
-                      </div>
-                    </div>
-
+              {lowStockOnly ? (
+                <>
+                  <h3 className="text-base font-bold text-white">All Stock is Healthy!</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    There are zero variants with low stock or zero inventory. All product variants currently have healthy stock levels.
+                  </p>
+                  <div className="pt-2">
                     <button
-                      onClick={() => handleOpenAdjust(it)}
-                      className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-xs font-bold transition active:scale-95"
+                      onClick={() => setLowStockOnly(false)}
+                      className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs shadow-lg inline-flex items-center gap-2 transition active:scale-95"
                     >
-                      Adjust Stock
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Show All Stock Units (Turn Off Alert Filter)</span>
                     </button>
                   </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Desktop / Laptop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left text-xs text-zinc-300">
-              <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
-                <tr>
-                  <th className="py-3 px-4">Product Name</th>
-                  <th className="py-3 px-4">Brand</th>
-                  <th className="py-3 px-4">Size</th>
-                  <th className="py-3 px-4">Colour</th>
-                  <th className="py-3 px-4 text-center">Purchased</th>
-                  <th className="py-3 px-4 text-center">Sold</th>
-                  <th className="py-3 px-4 text-center font-bold text-white">Remaining</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Stock Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800 font-medium">
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-zinc-400">
-                      <div className="space-y-3">
-                        <Package className="w-10 h-10 text-zinc-600 mx-auto" />
-                        <p className="text-sm font-bold text-white">No inventory records found</p>
-                        <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                          There are no size + color stock variants in the database. Click below to load sample catalog products and initial stock intake.
-                        </p>
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                          <button
-                            onClick={handleSeedCatalog}
-                            disabled={seeding}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
-                          >
-                            <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
-                            <span>{seeding ? 'Loading Stock...' : 'Populate Sample Catalog & Stock'}</span>
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((it) => {
-                    const isOut = Number(it.stock_quantity) <= 0;
-                    const isLow = Number(it.stock_quantity) <= Number(it.low_stock_threshold);
-                    return (
-                      <tr key={it.id} className="hover:bg-zinc-900/60 transition">
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-white block">{it.product_name}</span>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-bold text-white">No Inventory Records Found</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    {search
+                      ? `No product variants match "${search}". Try clearing your search keyword.`
+                      : 'There are no tracked inventory records in the database. Click below to load the complete sample catalog and initial stock.'}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                    {search ? (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition"
+                      >
+                        Clear Search Filter
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSeedCatalog}
+                        disabled={seeding}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition active:scale-95"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                        <span>{seeding ? 'Loading Stock...' : 'Populate Sample Catalog & Stock'}</span>
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card List View (< md) */}
+              <div className="md:hidden divide-y divide-zinc-800">
+                {items.map((it) => {
+                  const isOut = Number(it.stock_quantity) <= 0;
+                  const isLow = Number(it.stock_quantity) <= Number(it.low_stock_threshold);
+                  return (
+                    <div key={it.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm text-white block truncate">{it.product_name}</span>
                           <span className="text-[10px] text-zinc-400 font-mono">SKU: {it.sku}</span>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            it.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                          }`}>
-                            {it.brand_name}
+                        </div>
+                        {isOut ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-950/80 text-red-300 border border-red-800 flex-shrink-0">
+                            OUT OF STOCK
                           </span>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className="px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-700 font-bold text-white">
-                            {it.size}
+                        ) : isLow ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800 flex-shrink-0">
+                            LOW STOCK
                           </span>
-                        </td>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-800 flex-shrink-0">
+                            IN STOCK
+                          </span>
+                        )}
+                      </div>
 
-                        <td className="py-3 px-4 flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          it.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                        }`}>
+                          {it.brand_name}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-bold text-white text-[11px]">
+                          Size: {it.size}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300">
                           <span
-                            className="w-3 h-3 rounded-full border border-white/20 inline-block flex-shrink-0"
+                            className="w-2.5 h-2.5 rounded-full border border-white/20 inline-block"
                             style={{ backgroundColor: it.color_hex || '#000000' }}
                           />
-                          <span className="text-zinc-200">{it.color}</span>
-                        </td>
+                          {it.color}
+                        </span>
+                      </div>
 
-                        <td className="py-3 px-4 text-center font-mono text-zinc-300">{it.purchased_quantity}</td>
-                        <td className="py-3 px-4 text-center font-mono text-zinc-300">{it.sold_quantity}</td>
-
-                        <td className="py-3 px-4 text-center font-mono font-bold text-sm">
-                          <span className={isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}>
+                      <div className="grid grid-cols-3 gap-2 bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-center">
+                        <div>
+                          <span className="text-[10px] text-zinc-400 block uppercase">Purchased</span>
+                          <span className="font-mono font-bold text-xs text-zinc-200">{it.purchased_quantity}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-zinc-400 block uppercase">Sold</span>
+                          <span className="font-mono font-bold text-xs text-zinc-200">{it.sold_quantity}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-zinc-400 block uppercase">Remaining</span>
+                          <span className={`font-mono font-black text-sm ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
                             {it.stock_quantity}
                           </span>
-                        </td>
+                        </div>
+                      </div>
 
-                        <td className="py-3 px-4">
-                          {isOut ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-950/80 text-red-300 border border-red-800">
-                              OUT OF STOCK
-                            </span>
-                          ) : isLow ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800">
-                              LOW STOCK
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
-                              IN STOCK
-                            </span>
-                          )}
-                        </td>
+                      <button
+                        onClick={() => handleOpenAdjust(it)}
+                        className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-xs font-bold transition active:scale-95"
+                      >
+                        Adjust Stock
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
 
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => handleOpenAdjust(it)}
-                            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border border-zinc-700 text-xs font-bold transition active:scale-95"
-                          >
-                            Adjust Stock
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+              {/* Desktop / Laptop Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-zinc-300">
+                  <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
+                    <tr>
+                      <th className="py-3 px-4">Product Name</th>
+                      <th className="py-3 px-4">Brand</th>
+                      <th className="py-3 px-4">Size</th>
+                      <th className="py-3 px-4">Colour</th>
+                      <th className="py-3 px-4 text-center">Purchased</th>
+                      <th className="py-3 px-4 text-center">Sold</th>
+                      <th className="py-3 px-4 text-center font-bold text-white">Remaining</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Stock Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800 font-medium">
+                    {items.map((it) => {
+                      const isOut = Number(it.stock_quantity) <= 0;
+                      const isLow = Number(it.stock_quantity) <= Number(it.low_stock_threshold);
+                      return (
+                        <tr key={it.id} className="hover:bg-zinc-900/60 transition">
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-white block">{it.product_name}</span>
+                            <span className="text-[10px] text-zinc-400 font-mono">SKU: {it.sku}</span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              it.brand_code === 'nanova_tees' ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                            }`}>
+                              {it.brand_name}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 font-bold text-white">
+                              {it.size}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-white/20 inline-block"
+                                style={{ backgroundColor: it.color_hex || '#000000' }}
+                              />
+                              {it.color}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-center font-mono text-zinc-400">{it.purchased_quantity}</td>
+                          <td className="py-3 px-4 text-center font-mono text-zinc-400">{it.sold_quantity}</td>
+
+                          <td className="py-3 px-4 text-center font-mono font-black text-sm">
+                            <span className={isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}>
+                              {it.stock_quantity}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            {isOut ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-950/80 text-red-300 border border-red-800">
+                                OUT OF STOCK
+                              </span>
+                            ) : isLow ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800">
+                                LOW STOCK
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+                                IN STOCK
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => handleOpenAdjust(it)}
+                              className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-bold text-xs transition active:scale-95"
+                            >
+                              Adjust Stock
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ADJUST STOCK MODAL WITH MANDATORY REASON */}

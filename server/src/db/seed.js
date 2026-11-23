@@ -15,7 +15,43 @@ export async function seedDatabase(force = false) {
   const prodCount = Number(prodCountRow?.cnt || 0);
 
   if (prodCount > 0 && !force) {
-    console.log(`[Seed] Database already has ${prodCount} products. Skipping seed.`);
+    console.log(`[Seed] Database already has ${prodCount} products. Skipping product seed.`);
+    // Ensure supplier purchases exist if table is empty
+    try {
+      const purCountRow = await getOne('SELECT COUNT(*) as cnt FROM purchases');
+      if (!purCountRow || Number(purCountRow.cnt) === 0) {
+        const firstProduct = await getOne('SELECT id, purchase_cost FROM products WHERE brand_id = 1 LIMIT 1');
+        const firstVariant = firstProduct ? await getOne('SELECT id, size, color FROM product_variants WHERE product_id = ? LIMIT 1', [firstProduct.id]) : null;
+        if (firstProduct && firstVariant) {
+          const purRes1 = await query(
+            `INSERT INTO purchases (purchase_number, supplier_id, brand_id, purchase_date, total_amount, additional_expenses, notes, created_by)
+             VALUES ('PO-NT-2026-001', 1, 1, '2026-11-15', ?, 350.00, 'Batch intake of 240 GSM single jersey cotton tees.', 'admin')`,
+            [Number(firstProduct.purchase_cost || 250) * 60]
+          );
+          await query(
+            `INSERT INTO purchase_items (purchase_id, product_id, variant_id, size, color, quantity, unit_cost, total_cost)
+             VALUES (?, ?, ?, ?, ?, 60, ?, ?)`,
+            [purRes1.insertId, firstProduct.id, firstVariant.id, firstVariant.size, firstVariant.color, Number(firstProduct.purchase_cost || 250), Number(firstProduct.purchase_cost || 250) * 60]
+          );
+        }
+
+        const giftProduct = await getOne('SELECT id, purchase_cost FROM products WHERE brand_id = 2 LIMIT 1');
+        const giftVariant = giftProduct ? await getOne('SELECT id, size, color FROM product_variants WHERE product_id = ? LIMIT 1', [giftProduct.id]) : null;
+        if (giftProduct && giftVariant) {
+          const purRes2 = await query(
+            `INSERT INTO purchases (purchase_number, supplier_id, brand_id, purchase_date, total_amount, additional_expenses, notes, created_by)
+             VALUES ('PO-SN-2026-002', 2, 2, '2026-11-16', ?, 200.00, 'Curated luxury boxes and bespoke keepsake craft supplies.', 'admin')`,
+            [Number(giftProduct.purchase_cost || 280) * 40]
+          );
+          await query(
+            `INSERT INTO purchase_items (purchase_id, product_id, variant_id, size, color, quantity, unit_cost, total_cost)
+             VALUES (?, ?, ?, ?, ?, 40, ?, ?)`,
+            [purRes2.insertId, giftProduct.id, giftVariant.id, giftVariant.size, giftVariant.color, Number(giftProduct.purchase_cost || 280), Number(giftProduct.purchase_cost || 280) * 40]
+          );
+        }
+        console.log('[Seed] Auto-healed empty supplier purchases.');
+      }
+    } catch (_) {}
     return;
   }
 

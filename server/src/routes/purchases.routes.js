@@ -12,22 +12,26 @@ router.get('/', authenticateAdmin, async (req, res) => {
     const { brand, supplier_id, limit = 100 } = req.query;
 
     let sql = `
-      SELECT pu.*, s.name as supplier_name, s.company_name as supplier_company, s.phone as supplier_phone,
-             b.name as brand_name, b.code as brand_code
+      SELECT pu.*, 
+             COALESCE(s.name, 'Direct Procurement') as supplier_name, 
+             COALESCE(s.company_name, 'Wholesale Vendor') as supplier_company, 
+             COALESCE(s.phone, '-') as supplier_phone,
+             COALESCE(b.name, CASE WHEN pu.brand_id = 2 THEN 'SURPRISE NANOVA' ELSE 'NANOVA TEES' END) as brand_name, 
+             COALESCE(b.code, CASE WHEN pu.brand_id = 2 THEN 'surprise_nanova' ELSE 'nanova_tees' END) as brand_code
       FROM purchases pu
-      JOIN suppliers s ON pu.supplier_id = s.id
-      JOIN brands b ON pu.brand_id = b.id
+      LEFT JOIN suppliers s ON pu.supplier_id = s.id
+      LEFT JOIN brands b ON pu.brand_id = b.id
       WHERE 1=1
     `;
     const params = [];
 
     if (brand && brand !== 'all') {
       if (isNaN(brand)) {
-        sql += ' AND b.code = ?';
-        params.push(brand);
+        sql += ' AND (b.code = ? OR (b.code IS NULL AND CASE WHEN pu.brand_id = 2 THEN "surprise_nanova" ELSE "nanova_tees" END = ?))';
+        params.push(brand, brand);
       } else {
-        sql += ' AND b.id = ?';
-        params.push(brand);
+        sql += ' AND (b.id = ? OR pu.brand_id = ?)';
+        params.push(brand, brand);
       }
     }
 
@@ -43,9 +47,9 @@ router.get('/', authenticateAdmin, async (req, res) => {
 
     for (const p of purchases) {
       p.items = await query(
-        `SELECT pi.*, pr.name as product_name
+        `SELECT pi.*, COALESCE(pr.name, 'Procured Product Item') as product_name
          FROM purchase_items pi
-         JOIN products pr ON pi.product_id = pr.id
+         LEFT JOIN products pr ON pi.product_id = pr.id
          WHERE pi.purchase_id = ?`,
         [p.id]
       );
