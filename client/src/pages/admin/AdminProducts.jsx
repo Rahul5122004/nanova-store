@@ -16,7 +16,8 @@ import {
   DollarSign,
   Layers,
   Save,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
