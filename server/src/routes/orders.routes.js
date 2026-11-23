@@ -794,26 +794,30 @@ router.post('/manual-bill', authenticateAdmin, async (req, res) => {
       }
 
       // Record Payment record
-      await tx.query(
-        `INSERT INTO payments (
-          order_id, payment_method, amount, status, notes
-        ) VALUES (?, ?, ?, ?, ?)`,
-        [
-          orderId,
-          payment_method,
-          finalAmount,
-          isPaid ? 'VERIFIED' : 'PENDING',
-          isPaid ? 'Payment collected at bill creation' : 'Bill created as Pending Payment'
-        ]
-      );
+      if (isPaid) {
+        await tx.query(
+          `INSERT INTO payments (
+            order_id, payment_method, amount, status, verified_by, verified_at
+          ) VALUES (?, ?, ?, 'VERIFIED', ?, CURRENT_TIMESTAMP)`,
+          [orderId, payment_method, finalAmount, req.admin?.username || 'admin']
+        );
+      } else {
+        await tx.query(
+          `INSERT INTO payments (
+            order_id, payment_method, amount, status
+          ) VALUES (?, ?, ?, 'PENDING')`,
+          [orderId, payment_method, finalAmount]
+        );
+      }
 
       // Create Invoice Record
       const invoiceNumber = `INV-${orderNumber.replace('NAN-', '')}`;
+      const todayDate = new Date().toISOString().split('T')[0];
       await tx.query(
         `INSERT INTO invoices (
           invoice_number, order_id, brand_id, customer_name, customer_phone, customer_address,
           subtotal, delivery_charges, discount_amount, gst_rate, gst_amount, total_amount, invoice_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, CURRENT_DATE)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, ?)`,
         [
           invoiceNumber,
           orderId,
@@ -824,7 +828,8 @@ router.post('/manual-bill', authenticateAdmin, async (req, res) => {
           subtotal,
           deliveryFee,
           discount,
-          finalAmount
+          finalAmount,
+          todayDate
         ]
       );
 

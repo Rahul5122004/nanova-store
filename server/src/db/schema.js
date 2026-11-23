@@ -353,5 +353,10 @@ export async function createTablesIfNotExist() {
     }
   }
 
+  // Safe Alter Table migrations
+  try {
+    await query(`ALTER TABLE payments ADD COLUMN notes TEXT`);
+  } catch (e) {}
+
   console.log('[DB Schema] All 20 tables verified successfully.');
 }
