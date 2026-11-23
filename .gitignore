@@ -11,6 +11,10 @@ client/.env
 # Build outputs (can be rebuilt with npm run build)
 client/dist/
 
+# Generated Invoices & Cards
+server/uploads/invoices/*.pdf
+server/uploads/cards/*.pdf
+
 # Logs & OS files
 *.log
 npm-debug.log*

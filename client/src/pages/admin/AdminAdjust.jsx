@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   AlertTriangle, 
   Trash2, 
@@ -12,7 +13,8 @@ import {
   SlidersHorizontal,
   Shirt,
   Sparkles,
-  ShoppingBag
+  ShoppingBag,
+  Edit
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -514,13 +516,22 @@ export default function AdminAdjust() {
                         <span>{[c.city, c.state].filter(Boolean).join(', ') || 'N/A'}</span>
                         <span>Orders: <strong className="text-white">{c.total_orders || 0}</strong></span>
                       </div>
-                      <button
-                        onClick={() => handleDeleteCustomer(c)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete Customer</span>
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link
+                          to="/admin/customers"
+                          className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 text-xs font-bold transition"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteCustomer(c)}
+                          className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -579,7 +590,16 @@ export default function AdminAdjust() {
                             ₹{Number(c.total_spent || 0).toFixed(2)}
                           </td>
 
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                            <Link
+                              to="/admin/customers"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 text-xs font-bold transition active:scale-95 shadow-sm"
+                              title="Edit Customer in CRM"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </Link>
+
                             <button
                               onClick={() => handleDeleteCustomer(c)}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition active:scale-95"
