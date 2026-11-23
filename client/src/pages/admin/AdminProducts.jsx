@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, Box, Upload, X, Check, Shirt, Sparkles } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  Box,
+  Upload,
+  X,
+  Check,
+  Shirt,
+  Sparkles,
+  Building2,
+  SlidersHorizontal,
+  DollarSign,
+  Layers,
+  Save
+} from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 
@@ -10,6 +27,16 @@ export default function AdminProducts() {
   const [brandFilter, setBrandFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Quick Adjust Modal State
+  const [adjustingProduct, setAdjustingProduct] = useState(null);
+  const [adjustForm, setAdjustForm] = useState({
+    selling_price: '',
+    purchase_cost: '',
+    variants: []
+  });
+  const [savingAdjust, setSavingAdjust] = useState(false);
+  const [adjustError, setAdjustError] = useState('');
 
   // New Product Form State
   const [formData, setFormData] = useState({
@@ -98,7 +125,7 @@ export default function AdminProducts() {
   const handleAddVariantRow = () => {
     setVariantsList([
       ...variantsList,
-      { size: 'M', color: 'White', color_hex: '#ffffff', stock_quantity: 10, low_stock_threshold: 5 }
+      { size: '', color: '', color_hex: '#000000', stock_quantity: 0, low_stock_threshold: 5 }
     ]);
   };
 
@@ -119,12 +146,9 @@ export default function AdminProducts() {
 
     try {
       const data = new FormData();
-      Object.entries(formData).forEach(([k, v]) => data.append(k, v));
-      if (imageFile) {
-        data.append('image', imageFile);
-        data.append('front_image', imageFile);
-      }
-      data.append('variantsJson', JSON.stringify(variantsList));
+      Object.keys(formData).forEach((k) => data.append(k, formData[k]));
+      if (imageFile) data.append('front_image', imageFile);
+      data.append('variants', JSON.stringify(variantsList));
 
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -176,46 +200,161 @@ export default function AdminProducts() {
     }
   };
 
+  // Open Quick Adjust Modal
+  const handleOpenAdjust = (prod) => {
+    setAdjustingProduct(prod);
+    setAdjustError('');
+    setAdjustForm({
+      selling_price: prod.selling_price,
+      purchase_cost: prod.purchase_cost,
+      variants: (prod.variants || []).map((v) => ({
+        id: v.id,
+        size: v.size,
+        color: v.color,
+        current_stock: Number(v.stock_quantity),
+        new_stock: Number(v.stock_quantity)
+      }))
+    });
+  };
+
+  // Save Quick Adjust
+  const handleSaveAdjust = async (e) => {
+    e.preventDefault();
+    setSavingAdjust(true);
+    setAdjustError('');
+
+    try {
+      // 1. Update product prices
+      const form = new FormData();
+      form.append('name', adjustingProduct.name);
+      form.append('selling_price', adjustForm.selling_price);
+      form.append('purchase_cost', adjustForm.purchase_cost);
+
+      const pRes = await fetch(`/api/products/${adjustingProduct.id}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
+
+      if (!pRes.ok) {
+        const j = await pRes.json();
+        throw new Error(j.message || 'Failed to update product prices.');
+      }
+
+      // 2. Adjust variants stock if changed
+      for (const v of adjustForm.variants) {
+        const diff = Number(v.new_stock) - Number(v.current_stock);
+        if (diff !== 0) {
+          await fetch('/api/inventory/adjust', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              variant_id: v.id,
+              type: diff > 0 ? 'ADD' : 'REDUCE',
+              quantity_change: Math.abs(diff),
+              reason: 'Quick Adjust from Combined Products Screen'
+            })
+          });
+        }
+      }
+
+      setAdjustingProduct(null);
+      loadProducts();
+    } catch (err) {
+      setAdjustError(err.message);
+    } finally {
+      setSavingAdjust(false);
+    }
+  };
+
   return (
     <AdminLayout activeBrand={brandFilter} onSelectBrand={setBrandFilter}>
       <div className="space-y-6">
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black font-syne text-zinc-900 dark:text-white tracking-tight">
-              Products Management
+            <h1 className="text-2xl font-black font-syne text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
+              <Package className="w-6 h-6 text-indigo-400" />
+              <span>Products &amp; Stock Management</span>
             </h1>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-              Add new streetwear garments or surprise hampers with front/back 3D models and size variants.
+              Combined catalog covering both Nanova Tees and Surprise Nanova. Adjust prices, restock inventory, or create drops.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs transition active:scale-95 shadow-lg"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs transition active:scale-95 shadow-lg self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            <span>Add New Product</span>
+            <span>+ Add New Product</span>
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search by name, SKU or description..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#111116] border border-zinc-700 text-white placeholder-zinc-500 pl-9 pr-3 py-2 text-xs rounded-xl shadow-sm focus:outline-none focus:border-zinc-500"
-          />
+        {/* Filter Bar: Brand Pills + Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Brand Switcher Pills */}
+          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-200 dark:bg-zinc-900 rounded-2xl border border-zinc-300 dark:border-zinc-800">
+            <button
+              onClick={() => setBrandFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                brandFilter === 'all'
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-black shadow'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Combined ({products.length})</span>
+            </button>
+
+            <button
+              onClick={() => setBrandFilter('nanova_tees')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                brandFilter === 'nanova_tees'
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-black shadow'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Shirt className="w-3.5 h-3.5" />
+              <span>👕 Nanova Tees</span>
+            </button>
+
+            <button
+              onClick={() => setBrandFilter('surprise_nanova')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                brandFilter === 'surprise_nanova'
+                  ? 'bg-amber-500 text-black shadow'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-amber-400'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>✨ Surprise Nanova</span>
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search by name, SKU..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 pl-9 pr-3 py-2 text-xs rounded-xl text-zinc-900 dark:text-white focus:outline-none"
+            />
+          </div>
         </div>
 
-        {/* Products: Mobile Cards (< md) + Desktop Table (>= md) */}
+        {/* Products List: Mobile Cards (< md) + Desktop Table (>= md) */}
         <div className="bg-[#0c0c10] rounded-2xl border border-zinc-800 overflow-hidden shadow-xl text-white">
+          {/* Mobile Cards */}
           <div className="md:hidden divide-y divide-zinc-800">
             {products.length === 0 ? (
               <div className="py-12 px-4 text-center text-xs text-zinc-400">
-                No products found.
+                No products found matching your filter.
               </div>
             ) : (
               products.map((p) => {
@@ -230,9 +369,13 @@ export default function AdminProducts() {
                         <span className="font-bold text-sm text-white block truncate">{p.name}</span>
                         <span className="text-[10px] text-zinc-400 font-mono block">SKU: {p.sku}</span>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                            isTees ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                          }`}>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              isTees
+                                ? 'bg-zinc-800 text-zinc-200 border border-zinc-700'
+                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                            }`}
+                          >
                             {isTees ? 'NANOVA TEES' : 'SURPRISE NANOVA'}
                           </span>
                           <span className="text-[10px] text-zinc-400">{p.category_name}</span>
@@ -257,37 +400,47 @@ export default function AdminProducts() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDeleteProduct(p.id)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Product</span>
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleOpenAdjust(p)}
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs font-bold transition"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        <span>Adjust Stock &amp; Price</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })
             )}
           </div>
 
+          {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs text-zinc-300">
               <thead className="bg-[#14141c] text-[11px] uppercase font-bold text-zinc-300 border-b border-zinc-800">
                 <tr>
                   <th className="py-3 px-4">Product</th>
-                  <th className="py-3 px-4">Brand</th>
+                  <th className="py-3 px-4">Store Brand</th>
                   <th className="py-3 px-4">Category</th>
                   <th className="py-3 px-4">Selling Price</th>
-                  <th className="py-3 px-4">Cost Price</th>
+                  <th className="py-3 px-4">Cost Price (COGS)</th>
                   <th className="py-3 px-4">Total Stock</th>
-                  <th className="py-3 px-4">3D Viewer</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-zinc-400">
+                    <td colSpan={7} className="py-12 text-center text-zinc-400">
                       No products found.
                     </td>
                   </tr>
@@ -307,9 +460,13 @@ export default function AdminProducts() {
                         </td>
 
                         <td className="py-3 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                            isTees ? 'bg-zinc-800 text-zinc-200 border border-zinc-700' : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
-                          }`}>
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                              isTees
+                                ? 'bg-zinc-800 text-zinc-200 border border-zinc-700'
+                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                            }`}
+                          >
                             {isTees ? 'NANOVA TEES' : 'SURPRISE NANOVA'}
                           </span>
                         </td>
@@ -320,7 +477,7 @@ export default function AdminProducts() {
                           ₹{Number(p.selling_price).toFixed(2)}
                         </td>
 
-                        <td className="py-3 px-4 text-zinc-400">
+                        <td className="py-3 px-4 text-orange-400 font-mono">
                           ₹{Number(p.purchase_cost).toFixed(2)}
                         </td>
 
@@ -330,13 +487,16 @@ export default function AdminProducts() {
                           </span>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <span className="flex items-center gap-1 text-[11px] text-cyan-400 font-bold">
-                            <Box className="w-3.5 h-3.5" /> Ready
-                          </span>
-                        </td>
+                        <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                          <button
+                            onClick={() => handleOpenAdjust(p)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition border border-zinc-700"
+                            title="Adjust Price & Stock"
+                          >
+                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                            <span>Quick Adjust</span>
+                          </button>
 
-                        <td className="py-3 px-4 text-right">
                           <button
                             onClick={() => handleDeleteProduct(p.id)}
                             className="p-1.5 text-zinc-400 hover:text-red-400 rounded-lg transition"
@@ -354,7 +514,148 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        {/* ADD PRODUCT MODAL (Interior Dark Component) */}
+        {/* ======================================================== */}
+        {/* QUICK ADJUST MODAL */}
+        {/* ======================================================== */}
+        {adjustingProduct && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-[#0c0c11] border border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-white">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-indigo-400 block">Quick Adjust</span>
+                  <h3 className="font-bold text-base text-white">{adjustingProduct.name}</h3>
+                </div>
+                <button
+                  onClick={() => setAdjustingProduct(null)}
+                  className="p-1 text-zinc-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {adjustError && (
+                <div className="p-3 bg-red-950 border border-red-800 text-red-200 text-xs rounded-xl">
+                  {adjustError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveAdjust} className="space-y-4">
+                {/* Price Adjustments */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-300 block mb-1">
+                      Selling Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={adjustForm.selling_price}
+                      onChange={(e) => setAdjustForm({ ...adjustForm, selling_price: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 px-3 py-2 text-xs rounded-xl text-white font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-zinc-300 block mb-1">
+                      Cost Price / COGS (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={adjustForm.purchase_cost}
+                      onChange={(e) => setAdjustForm({ ...adjustForm, purchase_cost: e.target.value })}
+                      className="w-full bg-zinc-900 border border-zinc-700 px-3 py-2 text-xs rounded-xl text-orange-300 font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                {/* Variant Stock Adjustments */}
+                <div>
+                  <label className="text-[11px] font-semibold text-zinc-300 block mb-1.5">
+                    Stock Quantity per Size / Variant
+                  </label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {adjustForm.variants.map((v, i) => (
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between p-2.5 bg-zinc-950 rounded-xl border border-zinc-800 text-xs"
+                      >
+                        <div>
+                          <span className="font-bold text-white block">
+                            Size: {v.size} {v.color && `• ${v.color}`}
+                          </span>
+                          <span className="text-[10px] text-zinc-400">Current in DB: {v.current_stock}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = Math.max(0, updated[i].new_stock - 1);
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center"
+                          >
+                            -
+                          </button>
+
+                          <input
+                            type="number"
+                            min="0"
+                            value={v.new_stock}
+                            onChange={(e) => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = Math.max(0, parseInt(e.target.value, 10) || 0);
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-16 bg-zinc-900 border border-zinc-700 py-1 text-center text-xs font-mono font-bold text-white rounded-lg"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...adjustForm.variants];
+                              updated[i].new_stock = updated[i].new_stock + 1;
+                              setAdjustForm({ ...adjustForm, variants: updated });
+                            }}
+                            className="w-7 h-7 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold flex items-center justify-center"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustingProduct(null)}
+                    className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingAdjust}
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{savingAdjust ? 'Saving...' : 'Save Adjustments'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* ADD PRODUCT MODAL */}
+        {/* ======================================================== */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-[#0e0e14] border border-zinc-800 rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl text-white">
@@ -489,10 +790,16 @@ export default function AdminProducts() {
 
                   {imagePreview && (
                     <div className="mt-2 flex items-center gap-3 p-2 bg-[#1c1c28] rounded-xl border border-zinc-700/60 max-w-sm">
-                      <img src={imagePreview} alt="Preview" className="w-16 h-16 object-contain rounded-lg bg-zinc-950 p-1 border border-zinc-800" />
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-16 h-16 object-contain rounded-lg bg-zinc-950 p-1 border border-zinc-800"
+                      />
                       <div className="text-xs text-zinc-300">
                         <span className="font-bold text-emerald-400 block">✓ Image Selected</span>
-                        <span className="text-[10px] text-zinc-400 truncate block max-w-[200px]">{imageFile?.name}</span>
+                        <span className="text-[10px] text-zinc-400 truncate block max-w-[200px]">
+                          {imageFile?.name}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -518,7 +825,10 @@ export default function AdminProducts() {
 
                   <div className="space-y-2">
                     {variantsList.map((row, idx) => (
-                      <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-xs">
+                      <div
+                        key={idx}
+                        className="grid grid-cols-12 gap-2 items-center bg-[#14141c] p-2.5 rounded-xl border border-zinc-800 text-xs"
+                      >
                         <div className="col-span-3">
                           <input
                             type="text"

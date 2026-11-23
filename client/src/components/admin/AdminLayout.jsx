@@ -29,7 +29,10 @@ import {
   ExternalLink,
   Instagram,
   Sun,
-  Moon
+  Moon,
+  ChevronDown,
+  ChevronRight,
+  MoreHorizontal
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -46,29 +49,70 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
-  const navItems = [
-    { id: 'dashboard', label: '1. Dashboard', path: '/admin', icon: LayoutDashboard },
-    { id: 'tees', label: '2. Nanova Tees', path: '/admin/tees', icon: Shirt, badge: 'Brand' },
-    { id: 'gifts', label: '3. Surprise Nanova', path: '/admin/gifts', icon: Sparkles, badge: 'Brand' },
-    { id: 'products', label: '4. Products', path: '/admin/products', icon: Package },
-    { id: 'adjust', label: '5. Adjust (Products & Customers)', path: '/admin/adjust', icon: SlidersHorizontal, badge: 'Manage' },
-    { id: 'gallery', label: '6. Community & Moments Gallery', path: '/admin/gallery', icon: Instagram, badge: 'Social' },
-    { id: 'inventory', label: '7. Inventory (Size+Color)', path: '/admin/inventory', icon: Layers },
-    { id: 'stock-history', label: '8. Stock History (Audit)', path: '/admin/stock-history', icon: History },
-    { id: 'purchases', label: '9. Purchases', path: '/admin/purchases', icon: ShoppingCart },
-    { id: 'orders', label: '10. Orders', path: '/admin/orders', icon: Package },
-    { id: 'customers', label: '11. Customers', path: '/admin/customers', icon: Users },
-    { id: 'billing', label: '12. Billing & Invoices', path: '/admin/billing', icon: FileText },
-    { id: 'qr-settings', label: '13. QR Payment Settings', path: '/admin/qr-settings', icon: QrCode },
-    { id: 'payment-verification', label: '14. Payment Verification', path: '/admin/payment-verification', icon: CheckSquare },
-    { id: 'expenses', label: '15. Expenses', path: '/admin/expenses', icon: Receipt },
-    { id: 'profit-loss', label: '16. Profit & Loss', path: '/admin/profit-loss', icon: TrendingUp },
-    { id: 'analytics', label: '17. Analytics', path: '/admin/analytics', icon: BarChart3 },
-    { id: 'notifications', label: '18. Notifications', path: '/admin/notifications', icon: Bell },
-    { id: 'settings', label: '19. Website Settings', path: '/admin/settings', icon: Settings },
-    { id: 'business-contacts', label: '20. Business Contacts', path: '/admin/business-contacts', icon: PhoneCall },
-    { id: 'profile', label: '21. Admin Profile', path: '/admin/profile', icon: UserCheck },
+  // Simplified Core Menu (6 Clean, High-Level Items)
+  const coreNavItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard & P&L',
+      path: '/admin',
+      icon: LayoutDashboard,
+      badge: 'Dual-Brand',
+      description: 'Revenue, Profit & Brand Breakdown'
+    },
+    {
+      id: 'billing',
+      label: 'Manual Bill & Invoices',
+      path: '/admin/billing',
+      icon: Receipt,
+      badge: 'Create Bill',
+      description: 'Manual Bill Generator & PDF Invoices'
+    },
+    {
+      id: 'products',
+      label: 'Products & Stock',
+      path: '/admin/products',
+      icon: Package,
+      description: 'Catalog, pricing & stock adjustments'
+    },
+    {
+      id: 'orders',
+      label: 'Orders & Deliveries',
+      path: '/admin/orders',
+      icon: ShoppingCart,
+      description: 'Online orders & delivery tracking'
+    },
+    {
+      id: 'customers',
+      label: 'Customers & CRM',
+      path: '/admin/customers',
+      icon: Users,
+      description: 'Customer directory & WhatsApp'
+    },
+    {
+      id: 'settings',
+      label: 'Store & QR Settings',
+      path: '/admin/settings',
+      icon: Settings,
+      description: 'UPI QR payment & contacts'
+    }
   ];
+
+  // Advanced Tools (Secondary & Reports)
+  const advancedNavItems = [
+    { id: 'expenses', label: 'Expenses & Overhead', path: '/admin/expenses', icon: TrendingUp },
+    { id: 'purchases', label: 'Supplier Purchases', path: '/admin/purchases', icon: ShoppingBagIcon },
+    { id: 'inventory', label: 'Size+Color Matrix', path: '/admin/inventory', icon: Layers },
+    { id: 'stock-history', label: 'Stock Audit History', path: '/admin/stock-history', icon: History },
+    { id: 'payment-verification', label: 'Payment Approvals', path: '/admin/payment-verification', icon: CheckSquare },
+    { id: 'gallery', label: 'Moments Gallery', path: '/admin/gallery', icon: Instagram },
+    { id: 'analytics', label: 'Analytics & Trends', path: '/admin/analytics', icon: BarChart3 },
+    { id: 'notifications', label: 'Notifications Stream', path: '/admin/notifications', icon: Bell },
+    { id: 'profile', label: 'Admin Profile', path: '/admin/profile', icon: UserCheck }
+  ];
+
+  // Auto-expand advanced tools if currently visiting an advanced route
+  const isVisitingAdvanced = advancedNavItems.some((it) => location.pathname === it.path);
+  const [moreToolsOpen, setMoreToolsOpen] = useState(isVisitingAdvanced);
 
   const handleLogout = () => {
     logout();
@@ -77,13 +121,13 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
 
   return (
     <div className="min-h-screen bg-canvas-pattern text-zinc-900 dark:text-zinc-100 flex flex-col md:flex-row transition-colors relative">
-      {/* SIDEBAR (Desktop - Interior Dark Component) */}
-      <aside className="hidden md:flex flex-col w-60 lg:w-64 xl:w-72 bg-[#0c0c10] border-r border-zinc-800 text-white flex-shrink-0 z-30 transition-colors shadow-2xl">
+      {/* SIDEBAR (Desktop) */}
+      <aside className="hidden md:flex flex-col w-64 lg:w-72 bg-[#0c0c11] border-r border-zinc-800 text-white flex-shrink-0 z-30 transition-colors shadow-2xl">
         {/* Sidebar Brand Header */}
         <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
           <Logo variant="unified" size="small" showTagline={false} />
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">
-            ADMIN SAAS
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+            ADMIN PANEL
           </span>
         </div>
 
@@ -96,19 +140,27 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
             <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-[11px] font-bold text-center shadow-inner">
               <button
                 onClick={() => onSelectBrand('all')}
-                className={`py-1.5 rounded-lg transition ${activeBrand === 'all' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'}`}
+                className={`py-1.5 rounded-lg transition ${
+                  activeBrand === 'all' ? 'bg-white text-black shadow-sm font-extrabold' : 'text-zinc-400 hover:text-white'
+                }`}
               >
-                All
+                Combined
               </button>
               <button
                 onClick={() => onSelectBrand('nanova_tees')}
-                className={`py-1.5 rounded-lg transition ${activeBrand === 'nanova_tees' ? 'bg-white text-black shadow-sm' : 'text-zinc-400 hover:text-white'}`}
+                className={`py-1.5 rounded-lg transition ${
+                  activeBrand === 'nanova_tees' ? 'bg-white text-black shadow-sm font-extrabold' : 'text-zinc-400 hover:text-white'
+                }`}
               >
                 Tees
               </button>
               <button
                 onClick={() => onSelectBrand('surprise_nanova')}
-                className={`py-1.5 rounded-lg transition ${activeBrand === 'surprise_nanova' ? 'bg-amber-500 text-black shadow-sm' : 'text-amber-400/90 hover:text-amber-300'}`}
+                className={`py-1.5 rounded-lg transition ${
+                  activeBrand === 'surprise_nanova'
+                    ? 'bg-amber-500 text-black shadow-sm font-extrabold'
+                    : 'text-amber-400/90 hover:text-amber-300'
+                }`}
               >
                 Gifts
               </button>
@@ -116,27 +168,45 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
           </div>
         )}
 
-        {/* 21 Nav Items List */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {navItems.map((item) => {
+        {/* Short & Clean Navigation List */}
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-thin scrollbar-thumb-zinc-800">
+          <div className="px-3 py-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              Main Operations
+            </span>
+          </div>
+
+          {coreNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.id}
                 to={item.path}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
                   isActive
-                    ? 'bg-zinc-800 text-white font-extrabold shadow-md border border-zinc-700'
-                    : 'text-zinc-300 hover:bg-zinc-850 hover:text-white hover:bg-zinc-900/80'
+                    ? 'bg-gradient-to-r from-zinc-800 to-zinc-900 text-white font-black shadow-lg border border-zinc-700'
+                    : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-zinc-400'}`} />
-                  <span className="truncate">{item.label}</span>
+                  <div
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-zinc-900 text-zinc-400'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="block truncate font-bold text-xs">{item.label}</span>
+                    <span className="block truncate text-[10px] text-zinc-500 font-normal">
+                      {item.description}
+                    </span>
+                  </div>
                 </div>
+
                 {item.badge && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
                     {item.badge}
                   </span>
                 )}
@@ -144,14 +214,57 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
             );
           })}
 
-          {/* Item 21: Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition mt-4"
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            <span>20. Logout</span>
-          </button>
+          {/* Collapsible More Tools Section */}
+          <div className="pt-3 border-t border-zinc-800/80 mt-3">
+            <button
+              onClick={() => setMoreToolsOpen(!moreToolsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-900/60 transition"
+            >
+              <div className="flex items-center gap-2">
+                <MoreHorizontal className="w-4 h-4 text-zinc-500" />
+                <span>More Tools &amp; Reports</span>
+              </div>
+              {moreToolsOpen ? (
+                <ChevronDown className="w-4 h-4 text-zinc-500" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
+              )}
+            </button>
+
+            {moreToolsOpen && (
+              <div className="space-y-1 mt-1 pl-2">
+                {advancedNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.path}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-medium transition ${
+                        isActive
+                          ? 'bg-zinc-800 text-white font-bold border border-zinc-700'
+                          : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Logout Button */}
+          <div className="pt-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-red-400 hover:bg-red-950/40 hover:text-red-300 transition"
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span>Logout</span>
+            </button>
+          </div>
         </nav>
 
         {/* Sidebar Footer User Info */}
@@ -173,12 +286,12 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
 
       {/* MAIN ADMIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent">
-        {/* Top Header (Interior Dark Component) */}
+        {/* Top Header */}
         <header className="h-16 bg-[#0c0c10] border-b border-zinc-800 px-4 sm:px-6 flex items-center justify-between z-20 text-white shadow-sm">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-              className="md:hidden p-2 rounded-lg text-zinc-300 hover:text-white bg-zinc-800 border border-zinc-700"
+              className="md:hidden p-2 rounded-xl text-zinc-300 hover:text-white bg-zinc-800 border border-zinc-700"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -188,7 +301,16 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Real-time Chime Test Button */}
+            {/* Quick Bill Shortcut Button in Header */}
+            <Link
+              to="/admin/billing"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm"
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>+ New Bill</span>
+            </Link>
+
+            {/* Chime Sound Test */}
             <button
               onClick={playAlertChime}
               className="p-2 rounded-xl text-zinc-300 hover:text-white bg-zinc-800 border border-zinc-700 transition shadow-sm"
@@ -197,13 +319,13 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
               <Volume2 className="w-4 h-4" />
             </button>
 
-            {/* Light / Dark Mode Toggle Button */}
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-xl text-zinc-300 hover:text-white bg-zinc-800 border border-zinc-700 transition shadow-sm"
-              title={isDark ? "Switch to Light Theme" : "Switch to Dark Theme"}
+              title={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
             {/* Notification Bell Dropdown */}
@@ -254,7 +376,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
                     onClick={() => setNotifDropdownOpen(false)}
                     className="block text-center pt-2 border-t border-zinc-800 text-xs font-bold text-amber-400 hover:text-amber-300"
                   >
-                    View All Notifications →
+                    View All Notifications &rarr;
                   </Link>
                 </div>
               )}
@@ -272,14 +394,14 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
           </div>
         </header>
 
-        {/* MOBILE SIDEBAR MODAL */}
+        {/* MOBILE SIDEBAR DRAWER */}
         {mobileSidebarOpen && (
           <div
             className="fixed inset-0 z-50 md:hidden bg-black/60 backdrop-blur-sm flex"
             onClick={() => setMobileSidebarOpen(false)}
           >
             <div
-              className="w-72 max-w-[85vw] bg-[#0c0c10] h-full p-4 flex flex-col justify-between border-r border-zinc-800 shadow-2xl text-white"
+              className="w-72 max-w-[85vw] bg-[#0c0c10] h-full p-4 flex flex-col justify-between border-r border-zinc-800 shadow-2xl text-white overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
@@ -297,19 +419,19 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
                   <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-[11px] font-bold text-center">
                     <button
                       onClick={() => { onSelectBrand('all'); setMobileSidebarOpen(false); }}
-                      className={`py-1.5 rounded-lg transition ${activeBrand === 'all' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'all' ? 'bg-white text-black font-bold' : 'text-zinc-400'}`}
                     >
-                      All
+                      Combined
                     </button>
                     <button
                       onClick={() => { onSelectBrand('nanova_tees'); setMobileSidebarOpen(false); }}
-                      className={`py-1.5 rounded-lg transition ${activeBrand === 'nanova_tees' ? 'bg-white text-black' : 'text-zinc-400'}`}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'nanova_tees' ? 'bg-white text-black font-bold' : 'text-zinc-400'}`}
                     >
                       Tees
                     </button>
                     <button
                       onClick={() => { onSelectBrand('surprise_nanova'); setMobileSidebarOpen(false); }}
-                      className={`py-1.5 rounded-lg transition ${activeBrand === 'surprise_nanova' ? 'bg-amber-500 text-black' : 'text-amber-400/90'}`}
+                      className={`py-1.5 rounded-lg transition ${activeBrand === 'surprise_nanova' ? 'bg-amber-500 text-black font-bold' : 'text-amber-400/90'}`}
                     >
                       Gifts
                     </button>
@@ -317,38 +439,81 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
                 </div>
               )}
 
-              <nav className="flex-1 overflow-y-auto py-3 space-y-1">
-                {navItems.map((item) => {
+              {/* Mobile Main Nav */}
+              <nav className="flex-1 py-3 space-y-1">
+                <div className="px-2 py-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Main Menu
+                  </span>
+                </div>
+                {coreNavItems.map((item) => {
                   const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
                   return (
                     <Link
                       key={item.id}
                       to={item.path}
                       onClick={() => setMobileSidebarOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800"
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold ${
+                        isActive ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-300 hover:text-white hover:bg-zinc-800'
+                      }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
+
+                {/* Mobile Advanced Links */}
+                <div className="pt-2 border-t border-zinc-800 mt-2 space-y-1">
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase px-2 block">
+                    More Tools
+                  </span>
+                  {advancedNavItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.id}
+                        to={item.path}
+                        onClick={() => setMobileSidebarOpen(false)}
+                        className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-xs text-zinc-400 hover:text-white"
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-950/40 mt-4"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>20. Logout</span>
+                  <span>Logout</span>
                 </button>
               </nav>
             </div>
           </div>
         )}
 
-        {/* Content Body (Designer Canvas Pattern with Blueprint Micro-Grid) */}
+        {/* Content Body */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden bg-transparent relative">
           {children}
         </main>
       </div>
     </div>
   );
+}
+
+// Icon helper
+function ShoppingBagIcon(props) {
+  return <ShoppingCart {...props} />;
 }

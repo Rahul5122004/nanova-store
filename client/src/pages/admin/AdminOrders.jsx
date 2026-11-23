@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Package,
   Search,
@@ -14,7 +15,8 @@ import {
   ChevronRight,
   RotateCcw,
   Tag,
-  Percent
+  Percent,
+  FileText
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -157,6 +159,16 @@ export default function AdminOrders() {
             <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
               Live lifecycle status, customer contact deep links, payment confirmations, and PDF invoice generation.
             </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Link
+              to="/admin/billing"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm"
+            >
+              <FileText className="w-4 h-4" />
+              <span>+ Create Manual Bill</span>
+            </Link>
           </div>
         </div>
 

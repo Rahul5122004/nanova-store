@@ -587,4 +587,299 @@ router.get('/:id/thank-you-card', async (req, res) => {
   }
 });
 
+/**
+ * Admin: Create Manual Offline / Direct Customer Bill
+ * Adds directly into database, updates stock (if variant chosen),
+ * automatically integrates into Brand & Combined Profit & Loss,
+ * and generates downloadable PDF Invoice & Thank You Card.
+ * POST /api/orders/manual-bill
+ */
+router.post('/manual-bill', authenticateAdmin, async (req, res) => {
+  try {
+    const {
+      customer,
+      items,
+      brand_code = 'nanova_tees',
+      payment_status = 'PAID',
+      payment_method = 'Cash',
+      delivery_charges = 0,
+      discount_amount = 0,
+      notes = ''
+    } = req.body;
+
+    // 1. Validation
+    if (!customer?.full_name || !customer?.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer Full Name and Phone Number are required.'
+      });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please add at least one product item to generate the bill.'
+      });
+    }
+
+    // 2. Fetch Brand
+    const brand = await getOne('SELECT id, code, name, phone FROM brands WHERE code = ?', [brand_code]);
+    if (!brand) {
+      return res.status(400).json({ success: false, message: 'Invalid brand specified.' });
+    }
+
+    // 3. Ensure a fallback manual product & variant exists in DB for custom items
+    let fallbackProduct = await getOne(
+      'SELECT id FROM products WHERE slug = ? AND brand_id = ?',
+      [`manual-custom-${brand.code}`, brand.id]
+    );
+
+    if (!fallbackProduct) {
+      const fallbackProdRes = await query(
+        `INSERT INTO products (brand_id, category_id, sku, name, slug, description, selling_price, purchase_cost, is_active)
+         VALUES (?, 1, ?, ?, ?, 'Bespoke custom items created via Manual Bill Generator', 0.00, 0.00, 1)`,
+        [brand.id, `MANUAL-${brand.code.toUpperCase()}`, `${brand.name} Custom Order Item`, `manual-custom-${brand.code}`]
+      );
+      const fallbackProdId = fallbackProdRes.insertId;
+
+      const fallbackVarRes = await query(
+        `INSERT INTO product_variants (product_id, sku, size, color, color_hex, stock_quantity, low_stock_threshold)
+         VALUES (?, ?, 'Standard', 'Custom', '#111111', 99999, 0)`,
+        [fallbackProdId, `VAR-MANUAL-${brand.code.toUpperCase()}`]
+      );
+
+      fallbackProduct = {
+        id: fallbackProdId,
+        default_variant_id: fallbackVarRes.insertId
+      };
+    } else {
+      const defaultVar = await getOne('SELECT id FROM product_variants WHERE product_id = ? LIMIT 1', [fallbackProduct.id]);
+      fallbackProduct.default_variant_id = defaultVar ? defaultVar.id : 1;
+    }
+
+    // 4. Execute Transaction
+    const orderResult = await transaction(async (tx) => {
+      // Find or Create Customer
+      const cleanPhone = customer.phone.trim();
+      let existingCustomer = await tx.getOne('SELECT id, total_orders, total_spent FROM customers WHERE phone = ?', [cleanPhone]);
+      let customerId;
+
+      const custAddress = customer.address?.trim() || 'Direct Store Sale / Counter';
+      const custCity = customer.city?.trim() || 'Coimbatore';
+      const custDistrict = customer.district?.trim() || custCity;
+      const custState = customer.state?.trim() || 'Tamil Nadu';
+      const custPin = customer.pin_code?.trim() || '641001';
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        await tx.query(
+          `UPDATE customers SET 
+            full_name = ?, email = COALESCE(?, email), address = ?, city = ?, district = ?, state = ?, pin_code = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [customer.full_name, customer.email || null, custAddress, custCity, custDistrict, custState, custPin, customerId]
+        );
+      } else {
+        const custRes = await tx.query(
+          `INSERT INTO customers (full_name, phone, email, address, city, district, state, pin_code, total_orders, total_spent, last_order_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, CURRENT_TIMESTAMP)`,
+          [customer.full_name, cleanPhone, customer.email || null, custAddress, custCity, custDistrict, custState, custPin]
+        );
+        customerId = custRes.insertId;
+      }
+
+      // Generate Unique Order Number
+      const year = new Date().getFullYear();
+      const countRow = await tx.getOne('SELECT COUNT(*) as cnt FROM orders');
+      const seq = String(Number(countRow.cnt) + 1).padStart(4, '0');
+      const orderNumber = `MAN-${year}-${seq}`;
+
+      // Calculate totals and COGS
+      let subtotal = 0;
+      let totalCogs = 0;
+      let totalQty = 0;
+
+      for (const item of items) {
+        const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+        const unitPrice = Math.max(0, parseFloat(item.unit_price) || 0);
+        const unitCost = Math.max(0, parseFloat(item.unit_cost) || 0);
+
+        subtotal += unitPrice * qty;
+        totalCogs += unitCost * qty;
+        totalQty += qty;
+      }
+
+      const deliveryFee = Math.max(0, parseFloat(delivery_charges) || 0);
+      const discount = Math.max(0, parseFloat(discount_amount) || 0);
+      const finalAmount = Math.max(0, subtotal + deliveryFee - discount);
+
+      const isPaid = payment_status.toUpperCase() === 'PAID';
+      const orderStatus = isPaid ? 'COMPLETED' : 'CONFIRMED';
+      const finalPaymentStatus = isPaid ? 'PAID' : 'PENDING';
+
+      // Insert Order
+      const ordRes = await tx.query(
+        `INSERT INTO orders (
+          order_number, customer_id, brand_id, total_quantity,
+          subtotal, delivery_charges, discount_amount, final_amount, cogs_amount,
+          payment_method, payment_status, order_status, stock_deducted, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+        [
+          orderNumber,
+          customerId,
+          brand.id,
+          totalQty,
+          subtotal,
+          deliveryFee,
+          discount,
+          finalAmount,
+          totalCogs,
+          payment_method,
+          finalPaymentStatus,
+          orderStatus,
+          notes ? `[MANUAL BILL] ${notes}` : '[MANUAL BILL] Direct customer invoice created by admin'
+        ]
+      );
+      const orderId = ordRes.insertId;
+
+      // Insert Order Items and Update Inventory if real variant linked
+      for (const item of items) {
+        const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+        const unitPrice = Math.max(0, parseFloat(item.unit_price) || 0);
+        const unitCost = Math.max(0, parseFloat(item.unit_cost) || 0);
+        const lineTotal = unitPrice * qty;
+
+        const prodId = item.product_id ? Number(item.product_id) : fallbackProduct.id;
+        const varId = item.variant_id ? Number(item.variant_id) : fallbackProduct.default_variant_id;
+        const prodName = item.product_name?.trim() || 'Custom Item';
+        const size = item.size?.trim() || 'Standard';
+        const color = item.color?.trim() || 'Default';
+
+        await tx.query(
+          `INSERT INTO order_items (
+            order_id, product_id, variant_id, product_name, size, color, quantity, unit_price, unit_cost, subtotal, custom_note
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            orderId,
+            prodId,
+            varId,
+            prodName,
+            size,
+            color,
+            qty,
+            unitPrice,
+            unitCost,
+            lineTotal,
+            item.notes || null
+          ]
+        );
+
+        // If user linked an actual existing catalog variant, deduct warehouse stock
+        if (item.variant_id && item.variant_id !== fallbackProduct.default_variant_id) {
+          await tx.query(
+            `UPDATE product_variants 
+             SET stock_quantity = MAX(0, stock_quantity - ?),
+                 sold_quantity = sold_quantity + ?
+             WHERE id = ?`,
+            [qty, qty, item.variant_id]
+          );
+
+          await tx.query(
+            `INSERT INTO inventory_transactions (
+              variant_id, transaction_type, quantity_change, previous_stock, new_stock, reference_id, reference_type, notes
+            ) SELECT id, 'SALE', -?, stock_quantity + ?, stock_quantity, ?, 'MANUAL_BILL', 'Deducted via Manual Bill'
+            FROM product_variants WHERE id = ?`,
+            [qty, qty, orderNumber, item.variant_id]
+          );
+        }
+      }
+
+      // Record Payment record
+      await tx.query(
+        `INSERT INTO payments (
+          order_id, payment_method, amount, status, notes
+        ) VALUES (?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          payment_method,
+          finalAmount,
+          isPaid ? 'VERIFIED' : 'PENDING',
+          isPaid ? 'Payment collected at bill creation' : 'Bill created as Pending Payment'
+        ]
+      );
+
+      // Create Invoice Record
+      const invoiceNumber = `INV-${orderNumber.replace('NAN-', '')}`;
+      await tx.query(
+        `INSERT INTO invoices (
+          invoice_number, order_id, brand_id, customer_name, customer_phone, customer_address,
+          subtotal, delivery_charges, discount_amount, gst_rate, gst_amount, total_amount, invoice_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, ?, CURRENT_DATE)`,
+        [
+          invoiceNumber,
+          orderId,
+          brand.id,
+          customer.full_name,
+          cleanPhone,
+          `${custAddress}, ${custCity}, ${custState} - ${custPin}`,
+          subtotal,
+          deliveryFee,
+          discount,
+          finalAmount
+        ]
+      );
+
+      // Update customer total spend & orders count
+      await tx.query(
+        `UPDATE customers 
+         SET total_orders = total_orders + 1,
+             total_spent = total_spent + ?,
+             last_order_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [isPaid ? finalAmount : 0, customerId]
+      );
+
+      return {
+        orderId,
+        orderNumber,
+        invoiceNumber,
+        finalAmount,
+        subtotal,
+        totalCogs,
+        grossProfit: finalAmount - totalCogs,
+        paymentStatus: finalPaymentStatus
+      };
+    });
+
+    // 5. Generate Luxury PDF Invoice & Thank You Card immediately
+    try {
+      await generateInvoicePdf(orderResult.orderId);
+    } catch (pdfErr) {
+      console.warn('[Manual Bill PDF Generation Warning]:', pdfErr.message);
+    }
+
+    // 6. Push real-time notification
+    try {
+      sendNotification(
+        'Manual Bill Created',
+        `New manual bill #${orderResult.orderNumber} for Rs. ${orderResult.finalAmount.toFixed(2)} (${brand.name}) created. Status: ${orderResult.paymentStatus}.`,
+        'ORDER',
+        orderResult.orderId
+      );
+    } catch (notifErr) {
+      console.warn('[Notification Warning]:', notifErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Manual bill #${orderResult.orderNumber} created successfully! Added to ${brand.name} & Combined Profit & Loss.`,
+      order: orderResult,
+      invoiceUrl: `/api/orders/${orderResult.orderId}/invoice`,
+      cardUrl: `/api/orders/${orderResult.orderId}/thank-you-card`
+    });
+  } catch (err) {
+    console.error('[Manual Bill Error]:', err);
+    res.status(500).json({ success: false, message: err.message || 'Failed to create manual bill.' });
+  }
+});
+
 export default router;

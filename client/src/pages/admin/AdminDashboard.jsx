@@ -125,7 +125,49 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout activeBrand={brandFilter} onSelectBrand={setBrandFilter}>
-      <div className="space-y-8 transition-colors">
+      <div className="space-y-6 transition-colors">
+        {/* Quick Dual-Brand / Combined Switcher Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-[#0c0c11] border border-zinc-800 text-white shadow-xl">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+              ENTERPRISE BUSINESS OVERVIEW
+            </span>
+            <h1 className="text-xl font-black font-syne text-white mt-0.5">
+              {brandFilter === 'all'
+                ? '🏢 Combined Enterprise (Both Businesses)'
+                : brandFilter === 'nanova_tees'
+                ? '👕 Nanova Tees (Streetwear Store)'
+                : '✨ Surprise Nanova (Gifting Store)'}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-zinc-950 rounded-2xl border border-zinc-800 self-start sm:self-auto">
+            <button
+              onClick={() => setBrandFilter('all')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                brandFilter === 'all' ? 'bg-white text-black shadow' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Combined Total
+            </button>
+            <button
+              onClick={() => setBrandFilter('nanova_tees')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                brandFilter === 'nanova_tees' ? 'bg-white text-black shadow' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              👕 Nanova Tees
+            </button>
+            <button
+              onClick={() => setBrandFilter('surprise_nanova')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                brandFilter === 'surprise_nanova' ? 'bg-amber-500 text-black shadow' : 'text-amber-400 hover:text-amber-300'
+              }`}
+            >
+              ✨ Surprise Nanova
+            </button>
+          </div>
+        </div>
         {/* BRAND SPECIFIC HERO BANNERS */}
         {isTeesRoute && (
           <div className="relative rounded-3xl p-6 sm:p-8 overflow-hidden bg-[#0c0c11] border border-zinc-800 text-white shadow-2xl">

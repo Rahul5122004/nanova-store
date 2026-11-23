@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, Layers, FileSpreadsheet, ArrowUpRight, BarChart2, ShieldCheck } from 'lucide-react';
+import {
+  TrendingUp,
+  DollarSign,
+  Layers,
+  FileSpreadsheet,
+  ArrowUpRight,
+  BarChart2,
+  ShieldCheck,
+  Shirt,
+  Sparkles,
+  Building2,
+  CheckCircle2,
+  HelpCircle,
+  Clock,
+  ArrowRight
+} from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 
@@ -7,6 +22,7 @@ export default function AdminProfitLoss() {
   const { token } = useAuth();
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('combined'); // 'combined' | 'tees' | 'gifts' | 'compare'
 
   useEffect(() => {
     fetch('/api/reports/profit-loss', {
@@ -16,25 +32,145 @@ export default function AdminProfitLoss() {
       .then((d) => {
         if (d.success) setReportData(d.report);
       })
+      .catch((e) => console.error(e))
       .finally(() => setLoading(false));
   }, [token]);
 
   if (loading || !reportData) {
-    return <AdminLayout><div className="text-center py-20 text-zinc-500">Calculating financial reports...</div></AdminLayout>;
+    return (
+      <AdminLayout>
+        <div className="text-center py-24 text-zinc-500 text-sm">
+          Calculating dual-brand financial reports...
+        </div>
+      </AdminLayout>
+    );
   }
 
   const { nanovaTees: t, surpriseNanova: g, combined: c } = reportData;
 
+  const renderFinancialCard = (brand, title, subtitle, icon, theme) => {
+    const isProfitable = brand.netProfit >= 0;
+
+    let borderStyle = 'border-zinc-200 dark:border-zinc-800';
+    let headerBg = 'bg-zinc-50 dark:bg-zinc-900/60';
+    let brandBadge = 'bg-zinc-800 text-white';
+
+    if (theme === 'tees') {
+      borderStyle = 'border-indigo-200 dark:border-indigo-900/40';
+      headerBg = 'bg-indigo-50/50 dark:bg-[#12121e]';
+      brandBadge = 'bg-indigo-950 text-indigo-300 border border-indigo-800';
+    } else if (theme === 'gifts') {
+      borderStyle = 'border-amber-200 dark:border-amber-900/40';
+      headerBg = 'bg-amber-50/50 dark:bg-[#1a1216]';
+      brandBadge = 'bg-amber-950 text-amber-300 border border-amber-800';
+    } else if (theme === 'combined') {
+      borderStyle = 'border-emerald-200 dark:border-emerald-900/40';
+      headerBg = 'bg-emerald-50/50 dark:bg-[#0c1410]';
+      brandBadge = 'bg-emerald-950 text-emerald-300 border border-emerald-800';
+    }
+
+    return (
+      <div className={`rounded-3xl border ${borderStyle} bg-[#0c0c11] text-white shadow-xl overflow-hidden space-y-6 p-6 sm:p-8 flex flex-col justify-between`}>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-zinc-800">
+            <div>
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full inline-block mb-1.5 ${brandBadge}`}>
+                {title}
+              </span>
+              <h3 className="text-2xl font-black font-syne text-white tracking-tight">
+                {subtitle}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+              {icon}
+            </div>
+          </div>
+
+          {/* Big Profit Hero Pill */}
+          <div className={`p-4 rounded-2xl border ${isProfitable ? 'bg-emerald-950/40 border-emerald-800/80' : 'bg-red-950/40 border-red-800/80'} space-y-1`}>
+            <span className="text-[10px] uppercase font-black tracking-wider text-zinc-400 block">
+              Net Profit (Bottom Line)
+            </span>
+            <div className="flex items-baseline justify-between">
+              <span className={`text-3xl font-black font-outfit ${isProfitable ? 'text-emerald-400' : 'text-red-400'}`}>
+                ₹{brand.netProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className="text-xs font-mono font-bold text-zinc-300">
+                Gross Margin: {brand.grossProfitMargin}%
+              </span>
+            </div>
+          </div>
+
+          {/* Line-by-Line Financial Metrics */}
+          <div className="space-y-3 text-xs">
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/60">
+              <span className="text-zinc-400 font-medium">1. Sales Revenue (Orders + Bills):</span>
+              <span className="font-bold font-mono text-white text-sm">
+                ₹{brand.salesRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/60">
+              <span className="text-zinc-400 font-medium">2. Cost of Goods Sold (COGS):</span>
+              <span className="font-bold font-mono text-orange-400 text-sm">
+                -₹{brand.cogs.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-2 px-3 rounded-xl bg-zinc-900 border border-zinc-800 text-sm font-bold">
+              <span className="text-zinc-200">Gross Profit (Sales - COGS):</span>
+              <span className="font-mono text-emerald-400">
+                ₹{brand.grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center py-1.5 border-b border-zinc-800/60">
+              <span className="text-zinc-400 font-medium">3. Operating Expenses:</span>
+              <span className="font-bold font-mono text-red-400 text-sm">
+                -₹{brand.operatingExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            {/* Unsold Assets */}
+            <div className="pt-3 border-t border-zinc-800 space-y-2 text-[11px] text-zinc-400">
+              <div className="flex justify-between">
+                <span>Warehouse Unsold Stock Asset:</span>
+                <span className="font-mono text-white font-bold">
+                  ₹{brand.currentInventoryAsset.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total Procurement Investment:</span>
+                <span className="font-mono text-zinc-300">
+                  ₹{brand.totalPurchaseInvestment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Accounting Safe Note */}
+        <div className="pt-4 border-t border-zinc-800/60 text-[10px] text-zinc-500 flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+          <span>Strict Accrual COGS Model • Unsold stock is not deducted as loss.</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black font-syne text-zinc-900 dark:text-white tracking-tight">
-              Profit &amp; Loss Statement (COGS Model)
+            <h1 className="text-2xl font-black font-syne text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
+              <span>Profit &amp; Loss Financial Center</span>
             </h1>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-              Strict accounting calculation: Gross Profit = Sales - COGS (sold items only). Unsold inventory is preserved as an Asset.
+              Dual-brand accounting: View Nanova Tees, Surprise Nanova, and Combined enterprise profitability separately or together.
             </p>
           </div>
 
@@ -42,155 +178,174 @@ export default function AdminProfitLoss() {
             href="/api/reports/export/profit-loss"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 transition shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-emerald-600 dark:text-emerald-400 transition shadow-sm self-start sm:self-auto"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            <span>Export P&amp;L (Excel)</span>
+            <span>Export Financial Report (Excel)</span>
           </a>
         </div>
 
-        {/* 3 Brand Columns Comparison Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Card 1: NANOVA TEES */}
-          <div className="glass-panel p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm">
-            <div className="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest block">Brand 1</span>
-              <h3 className="text-xl font-bold font-syne text-zinc-900 dark:text-white mt-0.5">NANOVA TEES</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Streetwear Apparel Store</p>
-            </div>
+        {/* Tab Selection Switcher (Combined / Tees / Gifts / Side-by-Side) */}
+        <div className="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-200 dark:bg-zinc-900 rounded-2xl border border-zinc-300 dark:border-zinc-800">
+          <button
+            onClick={() => setActiveTab('combined')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'combined'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>🏢 Combined Enterprise (Total)</span>
+          </button>
 
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Sales Revenue:</span>
-                <span className="font-bold text-zinc-900 dark:text-white font-mono">₹{t.salesRevenue.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Cost of Goods Sold:</span>
-                <span className="font-bold text-orange-600 dark:text-orange-400 font-mono">-₹{t.cogs.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800 text-sm font-bold bg-emerald-50 dark:bg-zinc-950/60 px-2 rounded-lg">
-                <span className="text-emerald-700 dark:text-emerald-400">Gross Profit:</span>
-                <span className="font-mono text-emerald-700 dark:text-emerald-400">₹{t.grossProfit.toFixed(2)} ({t.grossProfitMargin}%)</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Operating Expenses:</span>
-                <span className="font-bold text-red-600 dark:text-red-400 font-mono">-₹{t.operatingExpenses.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2.5 text-base font-extrabold bg-emerald-100/70 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 px-3 rounded-xl">
-                <span className="text-emerald-800 dark:text-emerald-300">Net Profit:</span>
-                <span className="font-mono text-emerald-800 dark:text-emerald-300">₹{t.netProfit.toFixed(2)}</span>
-              </div>
+          <button
+            onClick={() => setActiveTab('tees')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'tees'
+                ? 'bg-zinc-900 text-white dark:bg-white dark:text-black shadow-md'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Shirt className="w-4 h-4" />
+            <span>👕 Nanova Tees (Streetwear)</span>
+          </button>
 
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Unsold Stock Asset:</span>
-                  <span className="font-mono text-zinc-900 dark:text-white font-bold">₹{t.currentInventoryAsset.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Procurement:</span>
-                  <span className="font-mono">₹{t.totalPurchaseInvestment.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={() => setActiveTab('gifts')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'gifts'
+                ? 'bg-amber-500 text-black shadow-md'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>✨ Surprise Nanova (Gifts)</span>
+          </button>
 
-          {/* Card 2: SURPRISE NANOVA */}
-          <div className="glass-panel p-6 rounded-3xl border border-amber-200 dark:border-amber-900/40 space-y-6 bg-gradient-to-b from-amber-50/50 dark:from-[#18131e]/50 to-transparent shadow-sm">
-            <div className="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest block">Brand 2</span>
-              <h3 className="text-xl font-bold font-outfit text-amber-800 dark:text-amber-200 mt-0.5">SURPRISE NANOVA</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Curated Keepsakes &amp; Gifts</p>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Sales Revenue:</span>
-                <span className="font-bold text-zinc-900 dark:text-white font-mono">₹{g.salesRevenue.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Cost of Goods Sold:</span>
-                <span className="font-bold text-orange-600 dark:text-orange-400 font-mono">-₹{g.cogs.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800 text-sm font-bold bg-amber-50 dark:bg-zinc-950/60 px-2 rounded-lg">
-                <span className="text-amber-700 dark:text-amber-300">Gross Profit:</span>
-                <span className="font-mono text-amber-700 dark:text-amber-300">₹{g.grossProfit.toFixed(2)} ({g.grossProfitMargin}%)</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Operating Expenses:</span>
-                <span className="font-bold text-red-600 dark:text-red-400 font-mono">-₹{g.operatingExpenses.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2.5 text-base font-extrabold bg-amber-100/70 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 px-3 rounded-xl">
-                <span className="text-amber-800 dark:text-amber-200">Net Profit:</span>
-                <span className="font-mono text-amber-800 dark:text-amber-200">₹{g.netProfit.toFixed(2)}</span>
-              </div>
-
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Unsold Stock Asset:</span>
-                  <span className="font-mono text-zinc-900 dark:text-white font-bold">₹{g.currentInventoryAsset.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Procurement:</span>
-                  <span className="font-mono">₹{g.totalPurchaseInvestment.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: COMBINED ENTERPRISE */}
-          <div className="glass-panel p-6 rounded-3xl border border-zinc-200 dark:border-zinc-700 space-y-6 bg-gradient-to-br from-zinc-50 dark:from-zinc-900 to-white dark:to-black shadow-sm">
-            <div className="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-              <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest block">Consolidated</span>
-              <h3 className="text-xl font-bold font-syne text-zinc-900 dark:text-white mt-0.5">COMBINED BUSINESS</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Total Enterprise Operations</p>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Total Sales:</span>
-                <span className="font-bold text-zinc-900 dark:text-white font-mono text-sm">₹{c.salesRevenue.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">Total COGS:</span>
-                <span className="font-bold text-orange-600 dark:text-orange-400 font-mono">-₹{c.cogs.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-zinc-200 dark:border-zinc-800 text-sm font-bold bg-zinc-100 dark:bg-zinc-950 px-2 rounded-lg">
-                <span className="text-zinc-900 dark:text-white">Gross Profit:</span>
-                <span className="font-mono text-zinc-900 dark:text-white font-extrabold">₹{c.grossProfit.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-zinc-200 dark:border-zinc-800/60">
-                <span className="text-zinc-600 dark:text-zinc-400">All Expenses:</span>
-                <span className="font-bold text-red-600 dark:text-red-400 font-mono">-₹{c.totalOperatingExpenses.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-3 text-lg font-black bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/40 px-3.5 rounded-xl">
-                <span className="text-emerald-700 dark:text-emerald-400">Net Profit:</span>
-                <span className="font-mono text-emerald-700 dark:text-emerald-400">₹{c.netProfit.toFixed(2)}</span>
-              </div>
-
-              <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Current Asset Value:</span>
-                  <span className="font-mono text-zinc-900 dark:text-white font-bold">₹{c.currentInventoryAsset.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Capital Invested:</span>
-                  <span className="font-mono">₹{c.totalPurchaseInvestment.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'compare'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-white'
+            }`}
+          >
+            <BarChart2 className="w-4 h-4" />
+            <span>📊 Compare All 3 Side-by-Side</span>
+          </button>
         </div>
 
-        {/* Accounting Rule Compliance Box */}
-        <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Compliance with Real Business Formulas</span>
+        {/* TAB 1: COMBINED ENTERPRISE VIEW */}
+        {activeTab === 'combined' && (
+          <div className="space-y-6">
+            {renderFinancialCard(
+              c,
+              'Consolidated Enterprise Total',
+              'COMBINED BUSINESS (TEES + GIFTS)',
+              <Building2 className="w-6 h-6 text-emerald-400" />,
+              'combined'
+            )}
+
+            {/* Quick Breakdown Summary of the Two Businesses */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-5 rounded-2xl bg-[#0c0c11] border border-zinc-800 text-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-400">👕 Nanova Tees Contribution</span>
+                  <span className="text-xs font-mono font-bold text-emerald-400">
+                    Net: ₹{t.netProfit.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs text-zinc-300">
+                  <span>Sales: ₹{t.salesRevenue.toFixed(2)}</span>
+                  <span>COGS: -₹{t.cogs.toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-white h-full"
+                    style={{
+                      width: `${c.salesRevenue > 0 ? (t.salesRevenue / c.salesRevenue) * 100 : 50}%`
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#0c0c11] border border-amber-900/60 text-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-300">✨ Surprise Nanova Contribution</span>
+                  <span className="text-xs font-mono font-bold text-emerald-400">
+                    Net: ₹{g.netProfit.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs text-zinc-300">
+                  <span>Sales: ₹{g.salesRevenue.toFixed(2)}</span>
+                  <span>COGS: -₹{g.cogs.toFixed(2)}</span>
+                </div>
+                <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-amber-400 h-full"
+                    style={{
+                      width: `${c.salesRevenue > 0 ? (g.salesRevenue / c.salesRevenue) * 100 : 50}%`
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            Formula Applied: <code className="text-zinc-900 dark:text-white bg-zinc-200 dark:bg-zinc-900 px-1 py-0.5 rounded">Gross Profit = Sales Revenue - Cost of Goods Sold</code> and <code className="text-zinc-900 dark:text-white bg-zinc-200 dark:bg-zinc-900 px-1 py-0.5 rounded">Net Profit = Gross Profit - Operating Expenses</code>. Unsold items remain categorized as current assets under available stock valuation and are not deducted from ongoing operational profitability.
-          </p>
-        </div>
+        )}
+
+        {/* TAB 2: NANOVA TEES ONLY */}
+        {activeTab === 'tees' && (
+          <div className="space-y-6">
+            {renderFinancialCard(
+              t,
+              'Business 1 • Streetwear Apparel',
+              'NANOVA TEES P&L',
+              <Shirt className="w-6 h-6 text-white" />,
+              'tees'
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: SURPRISE NANOVA ONLY */}
+        {activeTab === 'gifts' && (
+          <div className="space-y-6">
+            {renderFinancialCard(
+              g,
+              'Business 2 • Curated Gifts & Keepsakes',
+              'SURPRISE NANOVA P&L',
+              <Sparkles className="w-6 h-6 text-amber-400" />,
+              'gifts'
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: COMPARE ALL 3 SIDE-BY-SIDE */}
+        {activeTab === 'compare' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {renderFinancialCard(
+              t,
+              'Business 1',
+              'NANOVA TEES',
+              <Shirt className="w-5 h-5 text-white" />,
+              'tees'
+            )}
+            {renderFinancialCard(
+              g,
+              'Business 2',
+              'SURPRISE NANOVA',
+              <Sparkles className="w-5 h-5 text-amber-400" />,
+              'gifts'
+            )}
+            {renderFinancialCard(
+              c,
+              'Consolidated',
+              'COMBINED ENTERPRISE',
+              <Building2 className="w-5 h-5 text-emerald-400" />,
+              'combined'
+            )}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
