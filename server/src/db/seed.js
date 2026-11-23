@@ -6,69 +6,120 @@ export async function seedDatabase(force = false) {
   await initDatabase();
   await createTablesIfNotExist();
 
+  try {
+    await query('PRAGMA foreign_keys = OFF');
+  } catch (_) {}
+
   console.log('[Seed] Checking if seed is required...');
-  const existingAdmin = await getOne('SELECT id FROM admins WHERE username = ?', ['admin']);
-  if (existingAdmin && !force) {
-    console.log('[Seed] Database is already initialized. Skipping seed.');
+  const prodCountRow = await getOne('SELECT COUNT(*) as cnt FROM products WHERE slug NOT LIKE "manual-custom-%"');
+  const prodCount = Number(prodCountRow?.cnt || 0);
+
+  if (prodCount > 0 && !force) {
+    console.log(`[Seed] Database already has ${prodCount} products. Skipping seed.`);
     return;
   }
 
   console.log('[Seed] Starting complete database initialization & seeding...');
 
   // 1. Super Admin
-  const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash('NanovaAdmin@2026', salt);
-  await query(
-    `INSERT INTO admins (username, email, password_hash, full_name, role, is_active)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    ['admin', 'admin@nanova.com', passwordHash, 'Nanova Business Owner', 'SUPER_ADMIN', 1]
-  );
-  console.log('[Seed] Super admin created: admin / NanovaAdmin@2026');
+  const existingAdmin = await getOne('SELECT id FROM admins WHERE username = ?', ['admin']);
+  if (!existingAdmin) {
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash('NanovaAdmin@2026', salt);
+    await query(
+      `INSERT INTO admins (username, email, password_hash, full_name, role, is_active)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ['admin', 'admin@nanova.com', passwordHash, 'Nanova Business Owner', 'SUPER_ADMIN', 1]
+    );
+    console.log('[Seed] Super admin created: admin / NanovaAdmin@2026');
+  }
 
   // 2. Brands
-  await query(
-    `INSERT INTO brands (id, code, name, tagline, phone, whatsapp, instagram_handle, instagram_url, logo_symbol, theme_mode)
-     VALUES 
-     (1, 'nanova_tees', 'NANOVA TEES', 'WEAR YOUR VIBE.', '6382092001', '6382092001', '@nanova_tees', 'https://www.instagram.com/nanova_tees?utm_source=qr&psln=MXd1OXo3Z21rZmh1bQ==', 'N-GEOMETRIC', 'dark'),
-     (2, 'surprise_nanova', 'SURPRISE NANOVA', 'MAKE EVERY MOMENT SPECIAL.', '89035 41632', '8903541632', '@surprise_nanova', 'https://www.instagram.com/surprise_nanova?utm_source=qr&srtk=aWowazJlY3lzeGx1', 'N-GEOMETRIC', 'luxury')`
-  );
-
-  // 3. Categories
-  const categories = [
-    // Nanova Tees
-    { brand_id: 1, name: 'Oversized T-Shirts', slug: 'oversized-tees', desc: 'Heavyweight 240+ GSM dropped shoulder streetwear silhouettes.' },
-    { brand_id: 1, name: 'Regular Fit T-Shirts', slug: 'regular-fit-tees', desc: 'Everyday breathable 100% combed cotton premium essentials.' },
-    { brand_id: 1, name: 'Printed T-Shirts', slug: 'printed-tees', desc: 'High-density screen & puff printed expressive street graphics.' },
-    { brand_id: 1, name: 'Custom T-Shirts', slug: 'custom-tees', desc: 'Personalized artwork and bespoke typography for your crew.' },
-    { brand_id: 1, name: 'New Arrivals', slug: 'new-arrivals-tees', desc: 'The freshest seasonal drops and limited edition pieces.' },
-    { brand_id: 1, name: 'Best Sellers', slug: 'best-sellers-tees', desc: 'Customer-favorite streetwear staples with unmatched reviews.' },
-    
-    // Surprise Nanova
-    { brand_id: 2, name: 'Birthday Gifts', slug: 'birthday-gifts', desc: 'Memorable birthday hampers curated with love and joy.' },
-    { brand_id: 2, name: 'Anniversary Gifts', slug: 'anniversary-gifts', desc: 'Romantic custom keepsakes celebrating cherished milestones.' },
-    { brand_id: 2, name: 'Couple Gifts', slug: 'couple-gifts', desc: 'Harmonious matching treasures crafted for two hearts.' },
-    { brand_id: 2, name: 'Personalized Gifts', slug: 'personalized-gifts', desc: 'Bespoke engravings, customized names, and unique photos.' },
-    { brand_id: 2, name: 'Gift Hampers', slug: 'gift-hampers', desc: 'All-in-one curated luxury hampers for grand celebrations.' },
-    { brand_id: 2, name: 'Surprise Boxes', slug: 'surprise-boxes', desc: 'Exploding photo boxes and layered experiential mystery gifts.' },
-    { brand_id: 2, name: 'Customized Gifts', slug: 'customized-gifts', desc: 'Tailor-made customized gifts designed to your specific wishes.' },
-    { brand_id: 2, name: 'Special Occasion Gifts', slug: 'special-occasion-gifts', desc: 'Festival, convocation, farewell, and milestone treasures.' }
-  ];
-
-  for (const cat of categories) {
+  const brandCountRow = await getOne('SELECT COUNT(*) as cnt FROM brands');
+  if (!brandCountRow || Number(brandCountRow.cnt) === 0) {
     await query(
-      `INSERT INTO categories (brand_id, name, slug, description, sort_order, is_active)
-       VALUES (?, ?, ?, ?, 0, 1)`,
-      [cat.brand_id, cat.name, cat.slug, cat.desc]
+      `INSERT INTO brands (id, code, name, tagline, phone, whatsapp, instagram_handle, instagram_url, logo_symbol, theme_mode)
+       VALUES 
+       (1, 'nanova_tees', 'NANOVA TEES', 'WEAR YOUR VIBE.', '6382092001', '6382092001', '@nanova_tees', 'https://www.instagram.com/nanova_tees?utm_source=qr&psln=MXd1OXo3Z21rZmh1bQ==', 'N-GEOMETRIC', 'dark'),
+       (2, 'surprise_nanova', 'SURPRISE NANOVA', 'MAKE EVERY MOMENT SPECIAL.', '89035 41632', '8903541632', '@surprise_nanova', 'https://www.instagram.com/surprise_nanova?utm_source=qr&srtk=aWowazJlY3lzeGx1', 'N-GEOMETRIC', 'luxury')`
     );
   }
 
+  // 3. Categories
+  const catCountRow = await getOne('SELECT COUNT(*) as cnt FROM categories');
+  if (!catCountRow || Number(catCountRow.cnt) === 0) {
+    const categories = [
+      // Nanova Tees
+      { brand_id: 1, name: 'Oversized T-Shirts', slug: 'oversized-tees', desc: 'Heavyweight 240+ GSM dropped shoulder streetwear silhouettes.' },
+      { brand_id: 1, name: 'Regular Fit T-Shirts', slug: 'regular-fit-tees', desc: 'Everyday breathable 100% combed cotton premium essentials.' },
+      { brand_id: 1, name: 'Printed T-Shirts', slug: 'printed-tees', desc: 'High-density screen & puff printed expressive street graphics.' },
+      { brand_id: 1, name: 'Custom T-Shirts', slug: 'custom-tees', desc: 'Personalized artwork and bespoke typography for your crew.' },
+      { brand_id: 1, name: 'New Arrivals', slug: 'new-arrivals-tees', desc: 'The freshest seasonal drops and limited edition pieces.' },
+      { brand_id: 1, name: 'Best Sellers', slug: 'best-sellers-tees', desc: 'Customer-favorite streetwear staples with unmatched reviews.' },
+      
+      // Surprise Nanova
+      { brand_id: 2, name: 'Birthday Gifts', slug: 'birthday-gifts', desc: 'Memorable birthday hampers curated with love and joy.' },
+      { brand_id: 2, name: 'Anniversary Gifts', slug: 'anniversary-gifts', desc: 'Romantic custom keepsakes celebrating cherished milestones.' },
+      { brand_id: 2, name: 'Couple Gifts', slug: 'couple-gifts', desc: 'Harmonious matching treasures crafted for two hearts.' },
+      { brand_id: 2, name: 'Personalized Gifts', slug: 'personalized-gifts', desc: 'Bespoke engravings, customized names, and unique photos.' },
+      { brand_id: 2, name: 'Gift Hampers', slug: 'gift-hampers', desc: 'All-in-one curated luxury hampers for grand celebrations.' },
+      { brand_id: 2, name: 'Surprise Boxes', slug: 'surprise-boxes', desc: 'Exploding photo boxes and layered experiential mystery gifts.' },
+      { brand_id: 2, name: 'Customized Gifts', slug: 'customized-gifts', desc: 'Tailor-made customized gifts designed to your specific wishes.' },
+      { brand_id: 2, name: 'Special Occasion Gifts', slug: 'special-occasion-gifts', desc: 'Festival, convocation, farewell, and milestone treasures.' }
+    ];
+
+    for (const cat of categories) {
+      await query(
+        `INSERT INTO categories (brand_id, name, slug, description, sort_order, is_active)
+         VALUES (?, ?, ?, ?, 0, 1)`,
+        [cat.brand_id, cat.name, cat.slug, cat.desc]
+      );
+    }
+  }
+
   // 4. Suppliers
-  await query(
-    `INSERT INTO suppliers (name, company_name, phone, email, address, notes)
-     VALUES 
-     ('Arun Kumar', 'Tirupur Knitwear & Fabrics', '9842109876', 'tirupurknits@supply.com', 'Avinashi Road, Tirupur, Tamil Nadu', 'High quality 240 GSM single jersey cotton supplier.'),
-     ('Meenakshi S.', 'Royal Box & Keepsakes', '9443210987', 'royalbox@supply.com', 'Cross Cut Road, Coimbatore, Tamil Nadu', 'Handmade luxury rigid boxes, velvet lining, ribbons.')`
-  );
+  const supCountRow = await getOne('SELECT COUNT(*) as cnt FROM suppliers');
+  if (!supCountRow || Number(supCountRow.cnt) === 0) {
+    await query(
+      `INSERT INTO suppliers (name, company_name, phone, email, address, notes)
+       VALUES 
+       ('Arun Kumar', 'Tirupur Knitwear & Fabrics', '9842109876', 'tirupurknits@supply.com', 'Avinashi Road, Tirupur, Tamil Nadu', 'High quality 240 GSM single jersey cotton supplier.'),
+       ('Meenakshi S.', 'Royal Box & Keepsakes', '9443210987', 'royalbox@supply.com', 'Cross Cut Road, Coimbatore, Tamil Nadu', 'Handmade luxury rigid boxes, velvet lining, ribbons.')`
+    );
+  }
+
+  if (force) {
+    // If force re-seeding, clean sample purchases and catalog products so no duplicate SKUs occur
+    try {
+      await query("DELETE FROM purchase_items WHERE purchase_id IN (SELECT id FROM purchases WHERE purchase_number LIKE 'PO-%')");
+      await query("DELETE FROM purchases WHERE purchase_number LIKE 'PO-%'");
+    } catch (_) {}
+
+    const sampleSlugs = [
+      'cyber-nova-oversized-heavyweight-tee',
+      'wear-your-vibe-monochrome-street-tee',
+      'custom-signature-crewneck-tee',
+      'grand-birthday-golden-mystery-hamper',
+      'eternal-love-couple-memory-box',
+      'surprise-hexagonal-exploding-photo-box',
+      'captain-america-iconic-style-tee',
+      'spider-man-wear-the-legend-streetwear',
+      'customised-coffee-cup',
+      'customised-temperature-water-bottle',
+      'spotify-photo-keychain',
+      'panda-doll-with-name',
+      'customized-wallet-boys'
+    ];
+    for (const slug of sampleSlugs) {
+      const p = await getOne('SELECT id FROM products WHERE slug = ?', [slug]);
+      if (p) {
+        await query('DELETE FROM inventory_transactions WHERE product_id = ?', [p.id]);
+        await query('DELETE FROM purchase_items WHERE product_id = ?', [p.id]);
+        await query('DELETE FROM product_variants WHERE product_id = ?', [p.id]);
+        await query('DELETE FROM products WHERE id = ?', [p.id]);
+      }
+    }
+  }
 
   // 5. Products & Variants (with separate size/colour stock isolation)
   const products = [
@@ -373,6 +424,15 @@ export async function seedDatabase(force = false) {
   ];
 
   for (const p of products) {
+    // Ensure clean insert without unique constraint errors
+    const existingP = await getOne('SELECT id FROM products WHERE sku = ? OR slug = ?', [p.sku, p.slug]);
+    if (existingP) {
+      await query('DELETE FROM inventory_transactions WHERE product_id = ?', [existingP.id]);
+      await query('DELETE FROM purchase_items WHERE product_id = ?', [existingP.id]);
+      await query('DELETE FROM product_variants WHERE product_id = ?', [existingP.id]);
+      await query('DELETE FROM products WHERE id = ?', [existingP.id]);
+    }
+
     const prodRes = await query(
       `INSERT INTO products (brand_id, category_id, sku, name, slug, description, purchase_cost, selling_price, front_image, back_image, model_3d_type, customization_allowed, customization_placeholder, is_active, is_featured, is_new_arrival, is_best_seller)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
@@ -417,11 +477,51 @@ export async function seedDatabase(force = false) {
     }
   }
 
-  // 6. Audit Log
+  // 6. Sample Supplier Purchases
+  const purCountRow = await getOne('SELECT COUNT(*) as cnt FROM purchases');
+  if (!purCountRow || Number(purCountRow.cnt) === 0) {
+    const firstProduct = await getOne('SELECT id, purchase_cost FROM products WHERE brand_id = 1 LIMIT 1');
+    const firstVariant = firstProduct ? await getOne('SELECT id, size, color FROM product_variants WHERE product_id = ? LIMIT 1', [firstProduct.id]) : null;
+    
+    if (firstProduct && firstVariant) {
+      const purRes1 = await query(
+        `INSERT INTO purchases (purchase_number, supplier_id, brand_id, purchase_date, total_amount, additional_expenses, notes, created_by)
+         VALUES ('PO-NT-2026-001', 1, 1, '2026-11-15', ?, 350.00, 'Batch intake of 240 GSM single jersey cotton tees.', 'admin')`,
+        [Number(firstProduct.purchase_cost) * 60]
+      );
+      await query(
+        `INSERT INTO purchase_items (purchase_id, product_id, variant_id, size, color, quantity, unit_cost, total_cost)
+         VALUES (?, ?, ?, ?, ?, 60, ?, ?)`,
+        [purRes1.insertId, firstProduct.id, firstVariant.id, firstVariant.size, firstVariant.color, firstProduct.purchase_cost, Number(firstProduct.purchase_cost) * 60]
+      );
+    }
+
+    const giftProduct = await getOne('SELECT id, purchase_cost FROM products WHERE brand_id = 2 LIMIT 1');
+    const giftVariant = giftProduct ? await getOne('SELECT id, size, color FROM product_variants WHERE product_id = ? LIMIT 1', [giftProduct.id]) : null;
+    if (giftProduct && giftVariant) {
+      const purRes2 = await query(
+        `INSERT INTO purchases (purchase_number, supplier_id, brand_id, purchase_date, total_amount, additional_expenses, notes, created_by)
+         VALUES ('PO-SN-2026-002', 2, 2, '2026-11-16', ?, 200.00, 'Curated luxury boxes and bespoke keepsake craft supplies.', 'admin')`,
+        [Number(giftProduct.purchase_cost) * 40]
+      );
+      await query(
+        `INSERT INTO purchase_items (purchase_id, product_id, variant_id, size, color, quantity, unit_cost, total_cost)
+         VALUES (?, ?, ?, ?, ?, 40, ?, ?)`,
+        [purRes2.insertId, giftProduct.id, giftVariant.id, giftVariant.size, giftVariant.color, giftProduct.purchase_cost, Number(giftProduct.purchase_cost) * 40]
+      );
+    }
+    console.log('[Seed] Sample supplier purchase orders populated.');
+  }
+
+  // 7. Audit Log
   await query(
     `INSERT INTO audit_logs (admin_id, action, entity_type, entity_id, details, ip_address)
      VALUES (1, 'SYSTEM_INITIALIZATION', 'SYSTEM', '1', 'Initial database schema and business catalog successfully populated. Ready for fresh operations.', '127.0.0.1')`
   );
+
+  try {
+    await query('PRAGMA foreign_keys = ON');
+  } catch (_) {}
 
   console.log('[Seed] Database initialization and fresh catalog setup completed successfully!');
 }

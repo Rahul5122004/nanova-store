@@ -15,7 +15,8 @@ import {
   SlidersHorizontal,
   DollarSign,
   Layers,
-  Save
+  Save,
+  RefreshCw
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -69,6 +70,32 @@ export default function AdminProducts() {
 
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedCatalog = async () => {
+    setSeeding(true);
+    setStatusMsg('');
+    try {
+      const res = await fetch('/api/settings/seed-catalog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to populate catalog.');
+      }
+      setStatusMsg('Sample catalog products & stock loaded successfully!');
+      setTimeout(() => setStatusMsg(''), 4000);
+      loadProducts();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0] || null;
@@ -285,13 +312,25 @@ export default function AdminProducts() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs transition active:scale-95 shadow-lg self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Add New Product</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={handleSeedCatalog}
+              disabled={seeding}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700 text-emerald-200 font-bold text-xs transition active:scale-95 shadow-md"
+              title="Populate or restore all 13 official sample products and stock"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+              <span>{seeding ? 'Loading Products...' : 'Populate Sample Catalog'}</span>
+            </button>
+
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black font-bold text-xs transition active:scale-95 shadow-lg"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add New Product</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Bar: Brand Pills + Search */}
@@ -353,8 +392,22 @@ export default function AdminProducts() {
           {/* Mobile Cards */}
           <div className="md:hidden divide-y divide-zinc-800">
             {products.length === 0 ? (
-              <div className="py-12 px-4 text-center text-xs text-zinc-400">
-                No products found matching your filter.
+              <div className="py-12 px-4 text-center space-y-3">
+                <Package className="w-10 h-10 text-zinc-600 mx-auto" />
+                <p className="text-sm font-bold text-white">No products found in database</p>
+                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                  Your store currently has no catalog products. Click below to automatically load the 13 sample catalog products with full sizes, colors, and stock.
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <button
+                    onClick={handleSeedCatalog}
+                    disabled={seeding}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                    <span>{seeding ? 'Loading Products...' : 'Populate Sample Catalog & Stock'}</span>
+                  </button>
+                </div>
               </div>
             ) : (
               products.map((p) => {
@@ -363,7 +416,16 @@ export default function AdminProducts() {
                   <div key={p.id} className="p-4 space-y-3 text-xs">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-14 bg-zinc-900 rounded-lg p-1 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                        <img src={p.front_image} alt={p.name} className="w-full h-full object-contain" />
+                        {p.front_image ? (
+                          <img
+                            src={p.front_image}
+                            alt={p.name}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Package className="w-5 h-5 text-zinc-500" />
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <span className="font-bold text-sm text-white block truncate">{p.name}</span>
@@ -441,7 +503,23 @@ export default function AdminProducts() {
                 {products.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-zinc-400">
-                      No products found.
+                      <div className="space-y-3">
+                        <Package className="w-10 h-10 text-zinc-600 mx-auto" />
+                        <p className="text-sm font-bold text-white">No products found in database</p>
+                        <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                          Your catalog currently has 0 products. Click below to load the 13 sample catalog products with sizes, colors, and stock.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <button
+                            onClick={handleSeedCatalog}
+                            disabled={seeding}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                            <span>{seeding ? 'Loading Products...' : 'Populate Sample Catalog & Stock'}</span>
+                          </button>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -451,7 +529,16 @@ export default function AdminProducts() {
                       <tr key={p.id} className="hover:bg-zinc-900/60 transition">
                         <td className="py-3 px-4 flex items-center gap-3">
                           <div className="w-12 h-14 bg-zinc-900 rounded-lg p-1 border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                            <img src={p.front_image} alt={p.name} className="w-full h-full object-contain" />
+                            {p.front_image ? (
+                              <img
+                                src={p.front_image}
+                                alt={p.name}
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-zinc-500" />
+                            )}
                           </div>
                           <div>
                             <span className="font-bold text-white block">{p.name}</span>

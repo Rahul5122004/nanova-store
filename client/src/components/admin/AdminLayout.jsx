@@ -99,6 +99,7 @@ export default function AdminLayout({ children, activeBrand, onSelectBrand }) {
 
   // Advanced Tools (Secondary & Reports)
   const advancedNavItems = [
+    { id: 'adjust', label: 'Data Reset & Cleanups', path: '/admin/adjust', icon: SlidersHorizontal },
     { id: 'expenses', label: 'Expenses & Overhead', path: '/admin/expenses', icon: TrendingUp },
     { id: 'purchases', label: 'Supplier Purchases', path: '/admin/purchases', icon: ShoppingBagIcon },
     { id: 'inventory', label: 'Size+Color Matrix', path: '/admin/inventory', icon: Layers },

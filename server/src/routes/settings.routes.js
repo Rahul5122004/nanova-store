@@ -98,6 +98,135 @@ router.put('/', authenticateAdmin, async (req, res) => {
 });
 
 /**
+ * Admin: Delete All Products Only
+ * POST /api/settings/delete-all-products
+ */
+router.post('/delete-all-products', authenticateAdmin, async (req, res) => {
+  try {
+    try {
+      await query('PRAGMA foreign_keys = OFF');
+    } catch (_) {}
+    await query('DELETE FROM inventory_transactions');
+    await query('DELETE FROM purchase_items');
+    await query('DELETE FROM product_images');
+    await query('DELETE FROM product_variants');
+    await query('DELETE FROM products');
+    try {
+      await query('PRAGMA foreign_keys = ON');
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      message: 'All catalog products, variants, and stock transactions have been deleted.'
+    });
+  } catch (err) {
+    console.error('[Delete All Products Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Admin: Delete All Customers Only
+ * POST /api/settings/delete-all-customers
+ */
+router.post('/delete-all-customers', authenticateAdmin, async (req, res) => {
+  try {
+    try {
+      await query('PRAGMA foreign_keys = OFF');
+    } catch (_) {}
+    await query('DELETE FROM customers');
+    try {
+      await query('PRAGMA foreign_keys = ON');
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      message: 'All customer profiles and contact directories have been deleted.'
+    });
+  } catch (err) {
+    console.error('[Delete All Customers Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Admin: Delete All Orders & Bills Only
+ * POST /api/settings/delete-all-orders
+ */
+router.post('/delete-all-orders', authenticateAdmin, async (req, res) => {
+  try {
+    await query('DELETE FROM order_items');
+    await query('DELETE FROM invoices');
+    await query('DELETE FROM payments');
+    await query('DELETE FROM orders');
+
+    res.json({
+      success: true,
+      message: 'All customer orders, manual generated bills, invoices, and payment receipts have been deleted.'
+    });
+  } catch (err) {
+    console.error('[Delete All Orders Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Admin: Delete All Purchases Only
+ * POST /api/settings/delete-all-purchases
+ */
+router.post('/delete-all-purchases', authenticateAdmin, async (req, res) => {
+  try {
+    await query('DELETE FROM purchase_items');
+    await query('DELETE FROM purchases');
+
+    res.json({
+      success: true,
+      message: 'All supplier purchase batches have been deleted.'
+    });
+  } catch (err) {
+    console.error('[Delete All Purchases Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Admin: Delete All Expenses Only
+ * POST /api/settings/delete-all-expenses
+ */
+router.post('/delete-all-expenses', authenticateAdmin, async (req, res) => {
+  try {
+    await query('DELETE FROM expenses');
+
+    res.json({
+      success: true,
+      message: 'All recorded expenses have been deleted.'
+    });
+  } catch (err) {
+    console.error('[Delete All Expenses Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * Admin: Seed / Restore Sample Catalog Products & Stock
+ * POST /api/settings/seed-catalog
+ */
+router.post('/seed-catalog', authenticateAdmin, async (req, res) => {
+  try {
+    const { seedDatabase } = await import('../db/seed.js');
+    await seedDatabase(true);
+
+    res.json({
+      success: true,
+      message: 'Sample products, stock, and supplier purchases restored successfully!'
+    });
+  } catch (err) {
+    console.error('[Seed Catalog Error]:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
  * Admin: Master Reset - Wipe All Data to make website 100% blank
  * POST /api/settings/reset-all
  */
@@ -107,11 +236,19 @@ router.post('/reset-all', authenticateAdmin, async (req, res) => {
     await query('DELETE FROM invoices');
     await query('DELETE FROM payments');
     await query('DELETE FROM orders');
+    await query('DELETE FROM purchase_items');
+    await query('DELETE FROM purchases');
     await query('DELETE FROM inventory_transactions');
     await query('DELETE FROM product_images');
     await query('DELETE FROM product_variants');
     await query('DELETE FROM products');
+    try {
+      await query('PRAGMA foreign_keys = OFF');
+    } catch (_) {}
     await query('DELETE FROM customers');
+    try {
+      await query('PRAGMA foreign_keys = ON');
+    } catch (_) {}
     await query('DELETE FROM expenses');
     await query('DELETE FROM notifications');
 

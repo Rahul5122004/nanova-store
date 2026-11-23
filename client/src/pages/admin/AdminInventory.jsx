@@ -10,7 +10,9 @@ import {
   FileSpreadsheet,
   Check,
   X,
-  History
+  History,
+  RefreshCw,
+  Package
 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +32,29 @@ export default function AdminInventory() {
   const [adjustReason, setAdjustReason] = useState('');
   const [adjusting, setAdjusting] = useState(false);
   const [modalError, setModalError] = useState('');
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedCatalog = async () => {
+    setSeeding(true);
+    try {
+      const res = await fetch('/api/settings/seed-catalog', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to populate inventory.');
+      }
+      loadInventory();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const loadInventory = () => {
     setLoading(true);
@@ -187,8 +212,22 @@ export default function AdminInventory() {
           {/* Mobile Card List View (Zero horizontal overflow or cut-off columns) */}
           <div className="md:hidden divide-y divide-zinc-800">
             {items.length === 0 ? (
-              <div className="py-12 px-4 text-center text-xs text-zinc-400">
-                No inventory records match the current filter.
+              <div className="py-12 px-4 text-center space-y-3">
+                <Package className="w-10 h-10 text-zinc-600 mx-auto" />
+                <p className="text-sm font-bold text-white">No inventory records found</p>
+                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                  There are no variants or stock records matching this view. You can populate the complete catalog and stock now.
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <button
+                    onClick={handleSeedCatalog}
+                    disabled={seeding}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                    <span>{seeding ? 'Loading Stock...' : 'Populate Sample Catalog & Stock'}</span>
+                  </button>
+                </div>
               </div>
             ) : (
               items.map((it) => {
@@ -283,7 +322,23 @@ export default function AdminInventory() {
                 {items.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-12 text-center text-zinc-400">
-                      No inventory records match the current filter.
+                      <div className="space-y-3">
+                        <Package className="w-10 h-10 text-zinc-600 mx-auto" />
+                        <p className="text-sm font-bold text-white">No inventory records found</p>
+                        <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                          There are no size + color stock variants in the database. Click below to load sample catalog products and initial stock intake.
+                        </p>
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <button
+                            onClick={handleSeedCatalog}
+                            disabled={seeding}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${seeding ? 'animate-spin' : ''}`} />
+                            <span>{seeding ? 'Loading Stock...' : 'Populate Sample Catalog & Stock'}</span>
+                          </button>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ) : (

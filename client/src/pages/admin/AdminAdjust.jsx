@@ -36,9 +36,18 @@ export default function AdminAdjust() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [loadingCustomers, setLoadingCustomers] = useState(true);
 
-  // Master Reset Modal State
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetting, setResetting] = useState(false);
+  // Danger Action Modal State
+  const [dangerModal, setDangerModal] = useState({
+    open: false,
+    type: '',
+    title: '',
+    description: '',
+    warningList: [],
+    endpoint: '',
+    buttonText: '',
+    isDangerous: true
+  });
+  const [processingDanger, setProcessingDanger] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
 
   // Load Products
@@ -131,53 +140,148 @@ export default function AdminAdjust() {
     }
   };
 
-  // Master Reset: Wipe Everything to Blank Website
-  const handleMasterReset = async () => {
-    setResetting(true);
+  // Open Danger Confirmation Modal
+  const handleOpenDanger = (actionType) => {
+    switch (actionType) {
+      case 'products':
+        setDangerModal({
+          open: true,
+          type: 'products',
+          title: 'Delete All Products & Stock Only',
+          description: 'This will permanently remove all catalog products, images, size & color variants, and stock transactions from your store.',
+          warningList: [
+            'All products will be removed from Nanova Tees and Surprise Nanova storefronts',
+            'Customer profiles and past orders will NOT be deleted',
+            'Cannot be undone (use Restore Sample Products if you ever want to repopulate)'
+          ],
+          endpoint: '/api/settings/delete-all-products',
+          buttonText: 'Yes, Delete All Products',
+          isDangerous: true
+        });
+        break;
+      case 'customers':
+        setDangerModal({
+          open: true,
+          type: 'customers',
+          title: 'Delete All Customers Only',
+          description: 'This will permanently delete all customer profiles, phone numbers, and address directories from your CRM.',
+          warningList: [
+            'All customer records will be wiped permanently',
+            'Catalog products, variants, and stock will NOT be affected'
+          ],
+          endpoint: '/api/settings/delete-all-customers',
+          buttonText: 'Yes, Delete All Customers',
+          isDangerous: true
+        });
+        break;
+      case 'orders':
+        setDangerModal({
+          open: true,
+          type: 'orders',
+          title: 'Delete All Orders & Bills Only',
+          description: 'This will permanently clear all customer orders, manual generated bills, tax invoices, and payment verifications.',
+          warningList: [
+            'All sales transactions, invoices, and receipts will be deleted',
+            'Products, stock, and customers will NOT be deleted'
+          ],
+          endpoint: '/api/settings/delete-all-orders',
+          buttonText: 'Yes, Delete All Orders & Bills',
+          isDangerous: true
+        });
+        break;
+      case 'purchases':
+        setDangerModal({
+          open: true,
+          type: 'purchases',
+          title: 'Delete All Supplier Purchases Only',
+          description: 'This will permanently remove all supplier purchase batches and procurement intake logs.',
+          warningList: [
+            'All supplier purchase orders will be deleted',
+            'Products and customer orders will NOT be deleted'
+          ],
+          endpoint: '/api/settings/delete-all-purchases',
+          buttonText: 'Yes, Delete All Purchases',
+          isDangerous: true
+        });
+        break;
+      case 'expenses':
+        setDangerModal({
+          open: true,
+          type: 'expenses',
+          title: 'Delete All Expenses Only',
+          description: 'This will permanently delete all recorded business overhead expenses from the profit & loss logs.',
+          warningList: [
+            'All overhead expense entries will be deleted',
+            'Products and orders will NOT be deleted'
+          ],
+          endpoint: '/api/settings/delete-all-expenses',
+          buttonText: 'Yes, Delete All Expenses',
+          isDangerous: true
+        });
+        break;
+      case 'seed':
+        setDangerModal({
+          open: true,
+          type: 'seed',
+          title: 'Populate Sample Catalog Products & Stock',
+          description: 'This will populate the database with all 13 official catalog products across Nanova Tees & Surprise Nanova, complete with 3D models, sizes, colors, and initial supplier purchase batches.',
+          warningList: [
+            'Safe operation: Populates fresh catalog items and stock',
+            'Your existing customers and orders will NOT be removed'
+          ],
+          endpoint: '/api/settings/seed-catalog',
+          buttonText: 'Yes, Populate Sample Catalog',
+          isDangerous: false
+        });
+        break;
+      case 'reset-all':
+        setDangerModal({
+          open: true,
+          type: 'reset-all',
+          title: 'CRITICAL DANGER: Master Wipe (Blank Website)',
+          description: 'This will permanently wipe EVERYTHING: all products, variants, stock, customers, orders, bills, invoices, purchases, and expenses.',
+          warningList: [
+            'The entire website database will be reset to 100% blank',
+            'Storefront will immediately show 0 products and 0 orders',
+            'THIS ACTION CANNOT BE UNDONE!'
+          ],
+          endpoint: '/api/settings/reset-all',
+          buttonText: 'Yes, Wipe Everything to Blank',
+          isDangerous: true
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Execute Confirmed Danger Action
+  const handleExecuteDangerAction = async () => {
+    setProcessingDanger(true);
     try {
-      let res = await fetch('/api/settings/reset-all', {
+      let res = await fetch(dangerModal.endpoint, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         }
       });
 
-      // Fallback alias if needed
-      if (!res.ok && res.status === 404) {
-        res = await fetch('/api/reset-all', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          }
-        });
-      }
-
-      const rawText = await res.text();
-      let data = {};
-      try {
-        data = JSON.parse(rawText);
-      } catch (parseErr) {
-        throw new Error('Server returned unexpected non-JSON response. Please restart the backend server so the latest updates take effect.');
-      }
-
+      const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to reset website data.');
+        throw new Error(data.message || 'Operation failed.');
       }
 
-      setShowResetModal(false);
-      setActionMessage({ 
-        type: 'success', 
-        text: 'All website data wiped clean! The website is now 100% blank and fresh for your new products.' 
-      });
-      setTimeout(() => setActionMessage(null), 6000);
+      setDangerModal({ ...dangerModal, open: false });
+      setActionMessage({ type: 'success', text: data.message });
+      setTimeout(() => setActionMessage(null), 5000);
       loadProducts();
       loadCustomers();
     } catch (err) {
       setActionMessage({ type: 'error', text: err.message });
+      setTimeout(() => setActionMessage(null), 5000);
     } finally {
-      setResetting(false);
+      setProcessingDanger(false);
     }
   };
 
@@ -214,33 +318,153 @@ export default function AdminAdjust() {
           </div>
         )}
 
-        {/* MASTER RESET CARD (DANGER ZONE) */}
-        <div className="bg-[#12080a] border-2 border-red-700/80 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
-            <AlertOctagon className="w-64 h-64 text-red-500" />
-          </div>
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2 text-red-400 text-xs font-extrabold uppercase tracking-widest">
+        {/* DANGER ZONE: GRANULAR DATA CLEANUPS & MANAGEMENT */}
+        <div className="bg-[#12080a] border-2 border-red-800/80 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-red-900/50 pb-5">
+            <div>
+              <div className="flex items-center gap-2 text-red-400 text-xs font-extrabold uppercase tracking-widest mb-1">
                 <AlertTriangle className="w-4 h-4 text-red-500" />
-                <span>MASTER DANGER ZONE • 100% BLANK WEBSITE RESET</span>
+                <span>DATA CLEANUP &amp; RESET MANAGEMENT</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black font-syne text-white tracking-tight">
-                Reset All Website Data (Blank Website)
+                Granular Data Control (Delete Separately)
               </h2>
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                Clicking this will permanently delete <strong>all products, variants, stock, orders, customer details, and invoices</strong> from the entire website. The website will immediately become 100% clean and blank so you can enter your new catalog fresh.
+              <p className="text-xs text-zinc-300 mt-1 max-w-2xl">
+                Delete specific records individually with safety warnings, or restore default sample catalog items. Each action protects your other store data.
               </p>
             </div>
 
+            {/* Quick Seed Button */}
             <button
-              onClick={() => setShowResetModal(true)}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-950/60 transition active:scale-95 flex-shrink-0"
+              onClick={() => handleOpenDanger('seed')}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-950/60 transition active:scale-95 flex-shrink-0"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Reset All (Blank Website)</span>
+              <span>Restore Default Catalog &amp; Stock</span>
             </button>
+          </div>
+
+          {/* Grid of 5 Separate Danger Deletions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 1. Delete All Products */}
+            <div className="p-4 rounded-2xl bg-zinc-950/70 border border-red-900/40 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase">
+                  <Package className="w-4 h-4" />
+                  <span>Delete All Products Only</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Wipes all catalog items, size &amp; color variants, and stock. Customers and orders remain untouched.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('products')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-extrabold transition active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Products Only</span>
+              </button>
+            </div>
+
+            {/* 2. Delete All Customers */}
+            <div className="p-4 rounded-2xl bg-zinc-950/70 border border-red-900/40 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase">
+                  <Users className="w-4 h-4" />
+                  <span>Delete All Customers Only</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Permanently clears customer profiles, phones, and addresses. Catalog products and stock remain untouched.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('customers')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-extrabold transition active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Customers Only</span>
+              </button>
+            </div>
+
+            {/* 3. Delete All Orders & Bills */}
+            <div className="p-4 rounded-2xl bg-zinc-950/70 border border-red-900/40 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Delete All Orders &amp; Bills Only</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Clears all customer orders, manual generated bills, tax invoices, and payment verifications.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('orders')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-extrabold transition active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Orders &amp; Bills</span>
+              </button>
+            </div>
+
+            {/* 4. Delete All Supplier Purchases */}
+            <div className="p-4 rounded-2xl bg-zinc-950/70 border border-red-900/40 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase">
+                  <Package className="w-4 h-4" />
+                  <span>Delete All Purchases Only</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Removes all supplier purchase orders and procurement batch intake records.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('purchases')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-extrabold transition active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Purchases Only</span>
+              </button>
+            </div>
+
+            {/* 5. Delete All Expenses */}
+            <div className="p-4 rounded-2xl bg-zinc-950/70 border border-red-900/40 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase">
+                  <AlertOctagon className="w-4 h-4" />
+                  <span>Delete All Expenses Only</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Clears all recorded business overhead expenses from the profit and loss ledger.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('expenses')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-700 text-red-200 text-xs font-extrabold transition active:scale-95"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Expenses Only</span>
+              </button>
+            </div>
+
+            {/* 6. Total Reset All (Blank Website) */}
+            <div className="p-4 rounded-2xl bg-red-950/50 border border-red-600 flex flex-col justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-rose-300 font-black text-xs uppercase tracking-wide">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span>Master Wipe (Blank Store)</span>
+                </div>
+                <p className="text-[11px] text-zinc-300 mt-1">
+                  Wipes EVERYTHING across the entire site to make it 100% clean and blank.
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenDanger('reset-all')}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider shadow-md transition active:scale-95"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Master Wipe Everything</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -619,20 +843,26 @@ export default function AdminAdjust() {
           </div>
         )}
 
-        {/* MASTER RESET CONFIRMATION MODAL WITH STRONG WARNING */}
-        {showResetModal && (
+        {/* DANGER ACTION CONFIRMATION MODAL WITH STRONG WARNING */}
+        {dangerModal.open && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[#12080a] border-2 border-red-600 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-white animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between border-b border-red-900/60 pb-4">
-                <div className="flex items-center gap-2.5 text-red-400">
-                  <AlertOctagon className="w-6 h-6 text-red-500 animate-pulse" />
+            <div className={`bg-[#12080a] border-2 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl text-white animate-in fade-in zoom-in-95 duration-200 ${
+              dangerModal.isDangerous ? 'border-red-600' : 'border-emerald-600'
+            }`}>
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+                <div className="flex items-center gap-2.5">
+                  {dangerModal.isDangerous ? (
+                    <AlertOctagon className="w-6 h-6 text-red-500 animate-pulse" />
+                  ) : (
+                    <RefreshCw className="w-6 h-6 text-emerald-400" />
+                  )}
                   <h3 className="font-syne font-black text-lg text-white">
-                    CRITICAL WARNING: Wipe All Data?
+                    {dangerModal.title}
                   </h3>
                 </div>
                 <button
-                  onClick={() => setShowResetModal(false)}
-                  disabled={resetting}
+                  onClick={() => setDangerModal({ ...dangerModal, open: false })}
+                  disabled={processingDanger}
                   className="p-1 text-zinc-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
@@ -640,54 +870,59 @@ export default function AdminAdjust() {
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-red-950/80 border border-red-700/80 rounded-2xl text-xs space-y-2 text-red-200">
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  {dangerModal.description}
+                </p>
+
+                <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
+                  dangerModal.isDangerous 
+                    ? 'bg-red-950/80 border-red-700/80 text-red-200' 
+                    : 'bg-emerald-950/80 border-emerald-700/80 text-emerald-200'
+                }`}>
                   <p className="font-bold text-white text-sm">
-                    ⚠️ THIS ACTION CANNOT BE UNDONE!
-                  </p>
-                  <p>
-                    You are about to permanently delete:
+                    {dangerModal.isDangerous ? '⚠️ DANGER / CAUTION NOTICE:' : 'ℹ️ CONFIRMATION DETAILS:'}
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-zinc-300">
-                    <li>All products and images</li>
-                    <li>All size and colour inventory matrices</li>
-                    <li>All customer profiles and address details</li>
-                    <li>All orders, payments, invoices, and audit logs</li>
+                    {dangerModal.warningList.map((w, idx) => (
+                      <li key={idx}>{w}</li>
+                    ))}
                   </ul>
-                  <p className="font-bold text-amber-300 pt-1">
-                    Result: The website will immediately show 0 products and be 100% blank and fresh.
-                  </p>
                 </div>
 
-                <p className="text-xs text-zinc-400 text-center">
-                  Are you absolutely sure you want to proceed with this complete reset?
+                <p className="text-xs text-zinc-400 text-center font-medium">
+                  Are you sure you want to execute this operation?
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={resetting}
-                  onClick={() => setShowResetModal(false)}
+                  disabled={processingDanger}
+                  onClick={() => setDangerModal({ ...dangerModal, open: false })}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold text-xs transition"
                 >
-                  Cancel (Keep My Data)
+                  Cancel (Abort)
                 </button>
 
                 <button
                   type="button"
-                  disabled={resetting}
-                  onClick={handleMasterReset}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-red-950 transition active:scale-95 disabled:opacity-50"
+                  disabled={processingDanger}
+                  onClick={handleExecuteDangerAction}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-95 disabled:opacity-50 ${
+                    dangerModal.isDangerous
+                      ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-950'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950'
+                  }`}
                 >
-                  {resetting ? (
+                  {processingDanger ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Wiping Everything...</span>
+                      <span>Processing...</span>
                     </>
                   ) : (
                     <>
-                      <Trash2 className="w-4 h-4" />
-                      <span>Yes, Reset All to Blank</span>
+                      {dangerModal.isDangerous ? <Trash2 className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                      <span>{dangerModal.buttonText}</span>
                     </>
                   )}
                 </button>
