@@ -108,7 +108,7 @@ export default function AdminAdjust() {
       for (const v of adjustForm.variants) {
         const diff = Number(v.new_stock) - Number(v.current_stock);
         if (diff !== 0 || v.id === null) {
-          await fetch('/api/inventory/adjust', {
+          const adjRes = await fetch('/api/inventory/adjust', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -122,6 +122,10 @@ export default function AdminAdjust() {
               reason: 'Adjust from Admin Adjust Screen'
             })
           });
+          const adjJson = await adjRes.json();
+          if (!adjRes.ok || !adjJson.success) {
+            throw new Error(adjJson.message || 'Failed to adjust stock units.');
+          }
         }
       }
 

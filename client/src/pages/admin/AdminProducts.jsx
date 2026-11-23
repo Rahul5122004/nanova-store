@@ -49,7 +49,6 @@ export default function AdminProducts() {
     description: '',
     selling_price: '',
     purchase_cost: '',
-    initial_stock: 20,
     model_3d_type: 'garment',
     customization_allowed: 0,
     customization_placeholder: '',
@@ -179,8 +178,6 @@ export default function AdminProducts() {
       if (imageFile) data.append('front_image', imageFile);
       data.append('variants', JSON.stringify(variantsList));
       data.append('variantsJson', JSON.stringify(variantsList));
-      data.append('initial_stock', formData.initial_stock || 20);
-      data.append('stock_quantity', formData.initial_stock || 20);
 
       const res = await fetch('/api/products', {
         method: 'POST',
@@ -196,6 +193,8 @@ export default function AdminProducts() {
       setShowAddModal(false);
       setImageFile(null);
       setImagePreview(null);
+      setStatusMsg('Product created successfully with stock units!');
+      setTimeout(() => setStatusMsg(''), 4000);
       setFormData({
         brand_id: 1,
         category_id: 1,
@@ -204,7 +203,6 @@ export default function AdminProducts() {
         description: '',
         selling_price: '',
         purchase_cost: '',
-        initial_stock: 20,
         model_3d_type: 'garment',
         customization_allowed: 0,
         customization_placeholder: '',
@@ -282,7 +280,7 @@ export default function AdminProducts() {
       for (const v of adjustForm.variants) {
         const diff = Number(v.new_stock) - Number(v.current_stock);
         if (diff !== 0 || v.id === null) {
-          await fetch('/api/inventory/adjust', {
+          const adjRes = await fetch('/api/inventory/adjust', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -296,10 +294,16 @@ export default function AdminProducts() {
               reason: 'Quick Adjust from Products Screen'
             })
           });
+          const adjJson = await adjRes.json();
+          if (!adjRes.ok || !adjJson.success) {
+            throw new Error(adjJson.message || 'Failed to adjust stock units.');
+          }
         }
       }
 
       setAdjustingProduct(null);
+      setStatusMsg(`Stock & prices for "${adjustingProduct.name}" updated successfully!`);
+      setTimeout(() => setStatusMsg(''), 4000);
       loadProducts();
     } catch (err) {
       setAdjustError(err.message);
@@ -677,7 +681,7 @@ export default function AdminProducts() {
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {adjustForm.variants.map((v, i) => (
                       <div
-                        key={v.id}
+                        key={v.id || i}
                         className="flex items-center justify-between p-2.5 bg-zinc-950 rounded-xl border border-zinc-800 text-xs"
                       >
                         <div>
@@ -850,27 +854,6 @@ export default function AdminProducts() {
                       value={formData.purchase_cost}
                       onChange={(e) => setFormData({ ...formData, purchase_cost: e.target.value })}
                       className="w-full bg-[#181822] border border-zinc-700 text-white placeholder-zinc-500 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-zinc-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-300">Initial Stock Units (Quantity) *</label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      placeholder="20"
-                      value={formData.initial_stock}
-                      onChange={(e) => {
-                        const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-                        setFormData({ ...formData, initial_stock: val });
-                        if (formData.brand_id === 2 || variantsList.length <= 1) {
-                          setVariantsList([
-                            { size: 'Standard', color: 'Default', color_hex: '#ffffff', stock_quantity: val, low_stock_threshold: 5 }
-                          ]);
-                        }
-                      }}
-                      className="w-full bg-[#181822] border border-zinc-700 text-white placeholder-zinc-500 px-3.5 py-2.5 text-xs rounded-xl font-mono font-bold focus:outline-none focus:border-zinc-500"
                     />
                   </div>
                 </div>

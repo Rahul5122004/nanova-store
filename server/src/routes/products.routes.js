@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE 1=1
+      WHERE 1=1 AND (p.slug NOT LIKE 'manual-custom-%' AND p.sku NOT LIKE 'MANUAL-%')
     `;
     const params = [];
 

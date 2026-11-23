@@ -47,7 +47,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
       LEFT JOIN products p ON pv.product_id = p.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE 1=1
+      WHERE 1=1 AND (p.slug NOT LIKE 'manual-custom-%' AND p.sku NOT LIKE 'MANUAL-%')
     `;
     const params = [];
 
@@ -112,6 +112,7 @@ router.get('/alerts', authenticateAdmin, async (req, res) => {
        JOIN products p ON pv.product_id = p.id
        JOIN brands b ON p.brand_id = b.id
        WHERE pv.stock_quantity <= pv.low_stock_threshold
+         AND (p.slug NOT LIKE 'manual-custom-%' AND p.sku NOT LIKE 'MANUAL-%')
        ORDER BY pv.stock_quantity ASC`
     );
 
@@ -247,37 +248,31 @@ router.post('/adjust', authenticateAdmin, async (req, res) => {
       );
     });
 
-    res.json({
+    // Send notification if now out of stock or low stock
+    try {
+      if (calculatedNewStock === 0) {
+        sendNotification({
+          type: 'OUT_OF_STOCK',
+          title: `OUT OF STOCK: ${variant.product_name} (${variant.size}, ${variant.color})`,
+          message: `Stock level dropped to 0. Reason: ${reason || 'Stock adjustment'}`,
+          reference_id: variant.sku
+        });
+      } else if (calculatedNewStock <= (variant.low_stock_threshold || 5)) {
+        sendNotification({
+          type: 'LOW_STOCK',
+          title: `LOW STOCK: ${variant.product_name} (${variant.size}, ${variant.color})`,
+          message: `Only ${calculatedNewStock} units remaining (Threshold: ${variant.low_stock_threshold || 5}).`,
+          reference_id: variant.sku
+        });
+      }
+    } catch (_) {}
+
+    return res.json({
       success: true,
       message: 'Stock adjusted successfully.',
       variant_id: variant.id,
       previous_stock: previousStock,
-      new_stock: calculatedNewStock
-    });
-
-    // Send notification if now out of stock or low stock
-    if (newStock === 0) {
-      sendNotification({
-        type: 'OUT_OF_STOCK',
-        title: `OUT OF STOCK: ${variant.product_name} (${variant.size}, ${variant.color})`,
-        message: `Stock level dropped to 0. Reason: ${reason}`,
-        reference_id: variant.sku
-      });
-    } else if (newStock <= variant.low_stock_threshold) {
-      sendNotification({
-        type: 'LOW_STOCK',
-        title: `LOW STOCK: ${variant.product_name} (${variant.size}, ${variant.color})`,
-        message: `Only ${newStock} units remaining (Threshold: ${variant.low_stock_threshold}).`,
-        reference_id: variant.sku
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Stock updated and audit transaction recorded successfully.',
-      variant_id,
-      previousStock,
-      newStock,
+      new_stock: calculatedNewStock,
       delta
     });
   } catch (err) {
